@@ -1,0 +1,49 @@
+# Enforces the RULEBOOK §1 "Lead sole merger" rule on GitHub Free + private repos,
+# where native branch-protection / rulesets are not available.
+name: lead-only-main
+on:
+push:
+branches: [main]
+pull_request:
+branches: [main]
+types: [opened, reopened, synchronize, ready_for_review]
+pull_request_review:
+types: [submitted, dismissed]
+permissions:
+contents: read
+pull-requests: read
+jobs:
+guard-direct-push:
+if: github.event_name == 'push'
+runs-on: ubuntu-latest
+steps:
+- name: Reject direct pushes to main unless pusher is Lead
+env:
+LEAD_LOGIN: shreshthabagohil
+PUSHER: ${{ github.event.pusher.name }}
+ACTOR: ${{ github.actor }}
+run: |
+echo "Push event: pusher=$PUSHER actor=$ACTOR"
+if [ "$ACTOR" != "$LEAD_LOGIN" ] && [ "$PUSHER" != "$LEAD_LOGIN" ]; then
+echo "::error::Only Lead ($LEAD_LOGIN) may push directly to main. Open a PR instead."
+exit 1
+fi
+guard-pr-approval:
+if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
+runs-on: ubuntu-latest
+steps:
+14
+- name: Require Lead approval before this PR can be squash-merged
+env:
+LEAD_LOGIN: shreshthabagohil
+GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+PR_NUM: ${{ github.event.pull_request.number }}
+REPO: ${{ github.repository }}
+run: |
+approved=$(gh api "repos/$REPO/pulls/$PR_NUM/reviews" \
+--jq "[.[] | select(.user.login == \"$LEAD_LOGIN\" and .state == \"APPROVED\")] | length")
+if [ "${approved:-0}" -eq 0 ]; then
+echo "::error::PR requires an APPROVED review from $LEAD_LOGIN before merge."
+exit 1
+fi
+echo "PR has $approved approval(s) from $LEAD_LOGIN -- clear to squash-merge."
