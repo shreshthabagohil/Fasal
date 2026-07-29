@@ -1,0 +1,33 @@
+# Secrets — NEVER commit (see 06_DATA_PRIVACY_AND_RELEASE_SAFETY.md)
+.env
+*.key
+kaggle.json
+*_token*
+.hf_token
+
+# Raw data (may contain PII before scrubbing) + large artifacts
+data/raw/
+*.csv
+!kcc_sample_ILLUSTRATIVE.csv
+*.safetensors
+*.gguf
+*.bin
+checkpoints/
+wandb/
+
+# Held-out eval set (keep private so it can't leak into anyone's training)
+eval/heldout/
+
+# Generated artifacts (the released dataset goes to HF/Kaggle, not git)
+dataset/*.jsonl
+eval/out*.jsonl
+eval/out/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

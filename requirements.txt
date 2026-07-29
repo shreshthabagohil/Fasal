@@ -1,0 +1,29 @@
+# Pinned deps — do not use floating versions (reproducibility is graded).
+# Bump deliberately, record the change. Python 3.10+ assumed; record your exact Python + CUDA.
+# Adjust torch to match your CUDA; this pin is a sane CPU/data-work default.
+
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+datasets==2.20.0
+huggingface-hub==0.24.5
+
+# language ID + text
+fasttext-langdetect==1.0.5
+regex==2024.7.24
+sacrebleu==2.4.3            # chrF / BLEU
+rouge-score==0.1.2
+
+# near-dup + embeddings (leakage paraphrase audit)
+sentence-transformers==3.0.1
+datasketch==1.6.5          # MinHash dedup
+
+# experiment tracking
+wandb==0.17.5
+
+# training (uncomment/pin to your CUDA once the base model + platform path are confirmed)
+# torch==2.3.1
+# transformers==4.43.3
+# peft==0.12.0
+# bitsandbytes==0.43.1     # QLoRA 4-bit
+# trl==0.9.6
