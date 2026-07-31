@@ -6,7 +6,8 @@ import random
 
 def set_seed(seed: int | None = None) -> int:
     if seed is None:
-        seed = int(os.environ.get("GLOBAL_SEED", "42"))
+        # LOCKED default per train/A0_LOCKED.md + 02_EXECUTION_PLAN.md §6.5 — 1729, not a generic placeholder.
+        seed = int(os.environ.get("GLOBAL_SEED", "1729"))
     random.seed(seed)
     try:
         import numpy as np
