@@ -19,7 +19,7 @@ sentence-transformers==3.0.1
 datasketch==1.6.5          # MinHash dedup
 
 # experiment tracking
-wandb==0.17.5
+wandb==0.28.1
 
 # training (uncomment/pin to your CUDA once the base model + platform path are confirmed)
 # torch==2.3.1
