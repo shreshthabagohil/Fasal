@@ -7,11 +7,10 @@ Usage:
 """
 import argparse
 import json
-import re
 import sys
 
 sys.path.insert(0, "src")
-from clean_kcc import normalize, PHONE_RE, EMAIL_RE, AADHAAR_RE  # reuse the same logic
+from clean_kcc import normalize, contains_pii  # reuse the same logic
 
 ALLOWED_LANGS = {"hi", "gu", "mr", "ta", "bn", "kn", "pa", "en", "mixed", "unknown"}
 MIN_LANG_VOLUME = 200  # tune at M1; below this a language is dropped + documented
@@ -47,7 +46,7 @@ def t_pii(rows):
     hits = 0
     for r in rows:
         blob = f"{r.get('instruction','')} {r.get('output','')}"
-        if PHONE_RE.search(blob) or EMAIL_RE.search(blob) or AADHAAR_RE.search(blob):
+        if contains_pii(blob):
             hits += 1
     return (hits == 0, f"{hits} rows still contain phone/email/ID (MUST be 0)")
 

@@ -17,18 +17,47 @@ import unicodedata
 # --- PII scrubbing (see 06_DATA_PRIVACY_AND_RELEASE_SAFETY §1) ---------------
 PHONE_RE = re.compile(r"\b(?:\+?91[\-\s]?)?[6-9]\d{9}\b")
 PHONE_SPACED_RE = re.compile(r"\b[6-9]\d{4}[\-\s]\d{5}\b")
-AADHAAR_RE = re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+
+# Aadhaar-shaped (\d{4}\s?\d{4}\s?\d{4}) collides heavily with real KCC text:
+# weather-forecast day sequences, mandi price lists, and crop-variety code
+# lists all produce runs of 4+ consecutive 4-digit groups (see D5 false-positive
+# audit, 2026-08-05 — 20/20 sampled hits were weather/price/variety data, zero
+# real Aadhaar numbers). A genuine 12-digit Aadhaar number is exactly 3 groups
+# in isolation, not part of a longer run — so we only redact runs of exactly 3.
+# This is a scoped exception per RULEBOOK's own D-test guidance ("12-digit
+# crop-variety code false-positive -> exception list, NOT drop the regex"),
+# not a loosening of the gate.
+_DIGIT_RUN_RE = re.compile(r"\d{4}(?:\s?\d{4}){1,}")
+
+
+def _aadhaar_sub(m: re.Match) -> str:
+    groups = re.findall(r"\d{4}", m.group())
+    return "[ID]" if len(groups) == 3 else m.group()
 
 
 def scrub_pii(text: str) -> str:
     if not text:
         return text
     text = EMAIL_RE.sub("[EMAIL]", text)
-    text = AADHAAR_RE.sub("[ID]", text)
+    text = _DIGIT_RUN_RE.sub(_aadhaar_sub, text)
     text = PHONE_SPACED_RE.sub("[PHONE]", text)
     text = PHONE_RE.sub("[PHONE]", text)
     return text
+
+
+def contains_pii(text: str) -> bool:
+    """Single source of truth for 'has this text already been fully scrubbed?'
+    — used by both scrub_pii (indirectly, via the same regexes) and
+    data/tests.py's D5 gate, so the two can never drift out of sync."""
+    if not text:
+        return False
+    if EMAIL_RE.search(text) or PHONE_RE.search(text) or PHONE_SPACED_RE.search(text):
+        return True
+    for m in _DIGIT_RUN_RE.finditer(text):
+        if len(re.findall(r"\d{4}", m.group())) == 3:
+            return True
+    return False
 
 
 # --- garbage / quality gates ------------------------------------------------
