@@ -2,6 +2,19 @@
 
 _Mirror of `02_EXECUTION_PLAN.md` §A0. Changes require a Planning-session decision + an entry in `08_MILESTONE_LOG.md`. Do NOT silently edit._
 
+## ⭐ CANONICAL IDENTIFIERS — single source of truth (confirmed; do not guess)
+These four namespaces look alike but are DIFFERENT and were confused in early drafts. Corrected across all docs in the Planning session of 2026-07-31. Use exactly these:
+
+| Thing | Canonical value | Confirmed from | Why / note |
+|---|---|---|---|
+| **Hugging Face org** | `Algo-Nova` (capital A/N, hyphen) | actual org created at M0-T08; `08` M0 log | Everything on HF: `Algo-Nova/fasal-kcc-instruct`, `Algo-Nova/fasal-kcc-adapter`, `Algo-Nova/fasal-kcc-merged`, Space `Algo-Nova/fasal-advisor-web`. **NOT** `algonova`. |
+| **Kaggle username** | `shreshthabagohil` | Lead's profile `kaggle.com/shreshthabagohil` (screenshot, 2026-07-31) | Kaggle has no free orgs → datasets/models publish under the Lead's user: `shreshthabagohil/fasal-kcc-*`. **NOT** `algonova`. |
+| **W&B entity** | `shreshthabagohil-personal` (personal) | M0 decision; A0 §Experiment tracking | No paid W&B Team (zero-budget). Project `wandb.ai/shreshthabagohil-personal/fasal`. Teammates log to their OWN entity + screenshot. There is **no** `algonova` W&B entity. |
+| **HackIndia team name** | `AlgoNova` (one word, capital N) | HackIndia registration | Teammates register under this exact string. Different from the HF org spelling. |
+| **GitHub repo** | `github.com/shreshthabagohil/Fasal` | Lead's repo | Our real submission repo. The auto-created `HackIndiaXYZ/…-algonova` repo is HackIndia's, not ours — leave it as their string. |
+
+**Session note:** at the release milestone (REL), verify each of these still resolves before publishing links. The Kaggle namespace especially — confirm `shreshthabagohil/…` is claimable for the dataset + model before REL-T01/T05.
+
 ## Base model
 - A/B two at M3: `sarvamai/sarvam-1` vs `google/gemma-2-2b`. Keep the winner (highest 95% CI lower bound on iter-0 delta).
 - Pin the exact HF commit SHA of whichever base wins. Never load a floating tag.

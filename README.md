@@ -1,6 +1,6 @@
 # Fasal — Multilingual Indian-Farmer Advisory Model (KCC)
 
-*Fasal (फसल) — "crop/harvest". Built by team algonova for the AutoScientist Challenge.*
+*Fasal (फसल) — "crop/harvest". Built by team AlgoNova for the AutoScientist Challenge.*
 
 > **Headline result:** +__._% win-rate over `<base model>` (LLM-judge, blind A/B) on our multilingual held-out test. 95% CI [+_._, +_._], p<0.0__. Stable across 3 seeds.
 > *(fill this in once M2 produces the first real number — it goes here AND at the top of the model card)*
