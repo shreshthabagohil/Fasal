@@ -120,15 +120,29 @@ def detect_lang(text: str) -> str:
     return best
 
 
+def _s(v) -> str:
+    """Coerce any raw pandas cell value to a clean string. Empty CSV cells
+    come back from pandas as float('nan'), not '' — and NaN is truthy in
+    Python, so a plain `v or ""` doesn't catch it. Every field pulled off a
+    raw row must go through this before being stored or json-serialized,
+    or it silently becomes an unserializable/uncallable float downstream
+    (broke translate_to_indic.py's .strip() call on meta.querytype)."""
+    if v is None:
+        return ""
+    if isinstance(v, float) and v != v:  # NaN != NaN is the only float this is true for
+        return ""
+    return str(v).strip()
+
+
 def _first(row: dict, *keys: str) -> str:
     """Return the first non-empty value across possible column-name variants —
     different KCC mirrors use different schemas (QueryText/KccAns vs
     questions/answers seen so far). Avoids re-patching this file every time
     the raw source changes."""
     for k in keys:
-        v = row.get(k)
-        if v is not None and str(v).strip():
-            return str(v)
+        v = _s(row.get(k))
+        if v:
+            return v
     return ""
 
 
@@ -140,16 +154,16 @@ def row_to_record(row: dict) -> dict | None:
     # cleanly-spaced PII-shaped pattern that was never scrubbed — exactly
     # the bug that caused D5 to keep finding "new" hits after each regex fix
     # (found via root-cause analysis, 2026-08-05).
-    q = scrub_pii(surface_clean(_first(row, "QueryText", "questions").strip()))
-    a = scrub_pii(surface_clean(_first(row, "KccAns", "answers").strip()))
+    q = scrub_pii(surface_clean(_first(row, "QueryText", "questions")))
+    a = scrub_pii(surface_clean(_first(row, "KccAns", "answers")))
     if is_garbage(a) or not q:
         return None
     context = " | ".join(
         p for p in [
-            f"State: {row.get('StateName','')}",
-            f"Crop: {row.get('Crop','')}",
-            f"Season: {row.get('Season','')}",
-            f"Type: {row.get('QueryType','')}",
+            f"State: {_s(row.get('StateName'))}",
+            f"Crop: {_s(row.get('Crop'))}",
+            f"Season: {_s(row.get('Season'))}",
+            f"Type: {_s(row.get('QueryType'))}",
         ] if p.split(": ", 1)[1]
     )
     return {
@@ -158,10 +172,10 @@ def row_to_record(row: dict) -> dict | None:
         "output": a,
         "lang": detect_lang(q),
         "meta": {
-            "state": row.get("StateName", ""),
-            "district": row.get("DistrictName", ""),
-            "crop": row.get("Crop", ""),
-            "querytype": row.get("QueryType", ""),
+            "state": _s(row.get("StateName")),
+            "district": _s(row.get("DistrictName")),
+            "crop": _s(row.get("Crop")),
+            "querytype": _s(row.get("QueryType")),
         },
     }
 
