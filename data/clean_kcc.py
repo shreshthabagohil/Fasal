@@ -92,8 +92,8 @@ def detect_lang(text: str) -> str:
 
 
 def row_to_record(row: dict) -> dict | None:
-    q = surface_clean(scrub_pii(str(row.get("QueryText", "")).strip()))
-    a = surface_clean(scrub_pii(str(row.get("KccAns", "")).strip()))
+    q = surface_clean(scrub_pii(str(row.get("questions", "")).strip()))
+    a = surface_clean(scrub_pii(str(row.get("answers", "")).strip()))
     if is_garbage(a) or not q:
         return None
     context = " | ".join(
