@@ -133,8 +133,15 @@ def _first(row: dict, *keys: str) -> str:
 
 
 def row_to_record(row: dict) -> dict | None:
-    q = surface_clean(scrub_pii(_first(row, "QueryText", "questions").strip()))
-    a = surface_clean(scrub_pii(_first(row, "KccAns", "answers").strip()))
+    # surface_clean MUST run before scrub_pii, not after: raw KCC text has
+    # irregular whitespace (double spaces, newlines) that the PII regexes
+    # can't match across (\s? only allows one char). Scrubbing the raw text
+    # then normalizing whitespace afterward can silently CREATE a fresh,
+    # cleanly-spaced PII-shaped pattern that was never scrubbed — exactly
+    # the bug that caused D5 to keep finding "new" hits after each regex fix
+    # (found via root-cause analysis, 2026-08-05).
+    q = scrub_pii(surface_clean(_first(row, "QueryText", "questions").strip()))
+    a = scrub_pii(surface_clean(_first(row, "KccAns", "answers").strip()))
     if is_garbage(a) or not q:
         return None
     context = " | ".join(
