@@ -91,9 +91,21 @@ def detect_lang(text: str) -> str:
     return best
 
 
+def _first(row: dict, *keys: str) -> str:
+    """Return the first non-empty value across possible column-name variants —
+    different KCC mirrors use different schemas (QueryText/KccAns vs
+    questions/answers seen so far). Avoids re-patching this file every time
+    the raw source changes."""
+    for k in keys:
+        v = row.get(k)
+        if v is not None and str(v).strip():
+            return str(v)
+    return ""
+
+
 def row_to_record(row: dict) -> dict | None:
-    q = surface_clean(scrub_pii(str(row.get("questions", "")).strip()))
-    a = surface_clean(scrub_pii(str(row.get("answers", "")).strip()))
+    q = surface_clean(scrub_pii(_first(row, "QueryText", "questions").strip()))
+    a = surface_clean(scrub_pii(_first(row, "KccAns", "answers").strip()))
     if is_garbage(a) or not q:
         return None
     context = " | ".join(
