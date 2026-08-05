@@ -176,6 +176,7 @@ def main():
     df = pd.read_csv(args.inp)
     seen = set()
     kept, dropped = [], 0
+    pii_dropped = 0
     for _, row in df.iterrows():
         rec = row_to_record(row.to_dict())
         if rec is None:
@@ -184,6 +185,15 @@ def main():
         key = normalize(rec["instruction"]) + "||" + normalize(rec["output"])
         if key in seen:               # exact-normalized dedup; fuzzy dedup is a TODO (datasketch)
             dropped += 1
+            continue
+        # Safety net: no regex is perfect over 60K+ rows of messy real text.
+        # Rather than chase every last coincidental digit pattern by hand,
+        # any row that STILL trips the shared PII check after scrubbing gets
+        # dropped outright, never shipped. This guarantees D5=0 by
+        # construction — not just for today's data, for any future regen.
+        if contains_pii(rec["instruction"] + " " + rec["output"]):
+            dropped += 1
+            pii_dropped += 1
             continue
         seen.add(key)
         kept.append(rec)
@@ -197,7 +207,8 @@ def main():
     langs: dict[str, int] = {}
     for r in kept:
         langs[r["lang"]] = langs.get(r["lang"], 0) + 1
-    print(f"kept={len(kept)} dropped={dropped} version_hash={version_hash}")
+    print(f"kept={len(kept)} dropped={dropped} (of which {pii_dropped} dropped for residual PII "
+          f"after scrubbing) version_hash={version_hash}")
     print("per-language:", dict(sorted(langs.items(), key=lambda x: -x[1])))
     print("TODO M1: lock final language set from these counts; add fuzzy dedup + quality filter.")
 
