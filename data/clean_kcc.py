@@ -28,7 +28,7 @@ EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 # This is a scoped exception per RULEBOOK's own D-test guidance ("12-digit
 # crop-variety code false-positive -> exception list, NOT drop the regex"),
 # not a loosening of the gate.
-_DIGIT_RUN_RE = re.compile(r"\d{4}(?:\s?\d{4}){1,}")
+_DIGIT_RUN_RE = re.compile(r"\b\d{4}(?:\s?\d{4}){1,}\b")
 
 
 def _aadhaar_sub(m: re.Match) -> str:
