@@ -1,4 +1,4 @@
-"""KCC cleaning pipeline → instruction dataset (skeleton, per 02_EXECUTION_PLAN §A3).
+"""KCC cleaning pipeline → instruction dataset (per 02_EXECUTION_PLAN §A3).
 
 Turns raw KCC rows into {instruction, input, output, lang, meta} JSONL.
 Steps: drop garbage → normalize → strip PII → language-tag → dedup.
@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 
 # --- PII scrubbing (see 06_DATA_PRIVACY_AND_RELEASE_SAFETY §1) ---------------
 PHONE_RE = re.compile(r"\b(?:\+?91[\-\s]?)?[6-9]\d{9}\b")
@@ -39,9 +40,20 @@ def is_garbage(answer: str) -> bool:
     return (not a) or (a in GARBAGE) or (len(a.split()) < 2)
 
 
-# --- normalization (used for leakage/dedup keys too) ------------------------
+# --- surface clean (applied to stored text — folded in from PR #6's
+#     scripts/clean_dataset.py: NFC-normalize + collapse whitespace on the
+#     text we actually store, not just on the dedup/leakage key) -----------
+def surface_clean(text: str) -> str:
+    if not text:
+        return text
+    t = unicodedata.normalize("NFC", text)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+
+# --- normalization (used for leakage/dedup keys — deliberately more
+#     aggressive: lowercase + strip punctuation, per 05 §1 D2/D3) -----------
 def normalize(text: str) -> str:
-    import unicodedata
     t = unicodedata.normalize("NFC", text or "").strip().lower()
     t = re.sub(r"\s+", " ", t)
     t = re.sub(r"[^\w\sऀ-෿]", "", t)  # keep Indic script ranges
@@ -49,6 +61,11 @@ def normalize(text: str) -> str:
 
 
 # --- language tagging (placeholder; swap in fastText langid at M1) ----------
+# NOTE: Marathi shares the Devanagari block with Hindi (0x0900-0x097F) and
+# has no separate Unicode range, so script-range detection alone can NEVER
+# distinguish mr from hi. Flagged for Lead — real KCC data includes Marathi;
+# this placeholder will silently mistag every mr row as hi until a real
+# langid model (e.g. fastText lid.176) is swapped in.
 SCRIPT_RANGES = {
     "hi": (0x0900, 0x097F), "bn": (0x0980, 0x09FF), "pa": (0x0A00, 0x0A7F),
     "gu": (0x0A80, 0x0AFF), "ta": (0x0B80, 0x0BFF), "kn": (0x0C80, 0x0CFF),
@@ -79,13 +96,9 @@ def row_to_record(row: dict) -> dict | None:
     a = surface_clean(scrub_pii(str(row.get("KccAns", "")).strip()))
     if is_garbage(a) or not q:
         return None
-    meta = {k.lower(): str(row.get(k, "")).strip()
-            for k in ("StateName", "DistrictName", "Crop", "Season", "QueryType")}
-    inp = " | ".join(f"{k.title()}: {v}" for k, v in
-                     (("state", meta["statename" if "statename" in meta else "state"]),) if False)
     context = " | ".join(
         p for p in [
-            f"State: {meta.get('statename', row.get('StateName',''))}",
+            f"State: {row.get('StateName','')}",
             f"Crop: {row.get('Crop','')}",
             f"Season: {row.get('Season','')}",
             f"Type: {row.get('QueryType','')}",
