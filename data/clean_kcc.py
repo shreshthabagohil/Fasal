@@ -19,6 +19,14 @@ PHONE_RE = re.compile(r"\b(?:\+?91[\-\s]?)?[6-9]\d{9}\b")
 PHONE_SPACED_RE = re.compile(r"\b[6-9]\d{4}[\-\s]\d{5}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 
+# Indian landline (STD code + local number, e.g. "01884-243647", "0181 2345678")
+# — a real gap found 2026-08-06 reviewing PR #19: a KVK contact-number row
+# shipped a live landline untouched because PHONE_RE/PHONE_SPACED_RE only
+# cover mobile numbers (leading 6-9). Landlines lead with 0, so the 0-prefix
+# is itself a strong anchor against false positives on price/crop-code
+# ranges (those never start with 0 followed by a hyphenated 6-8 digit run).
+LANDLINE_RE = re.compile(r"\b0\d{2,4}[\-\s]\d{6,8}\b")
+
 # Aadhaar-shaped (\d{4}\s?\d{4}\s?\d{4}) collides heavily with real KCC text:
 # weather-forecast day sequences, mandi price lists, and crop-variety code
 # lists all produce runs of 4+ consecutive 4-digit groups (see D5 false-positive
@@ -43,6 +51,7 @@ def scrub_pii(text: str) -> str:
     text = _DIGIT_RUN_RE.sub(_aadhaar_sub, text)
     text = PHONE_SPACED_RE.sub("[PHONE]", text)
     text = PHONE_RE.sub("[PHONE]", text)
+    text = LANDLINE_RE.sub("[PHONE]", text)
     return text
 
 
@@ -52,7 +61,8 @@ def contains_pii(text: str) -> bool:
     data/tests.py's D5 gate, so the two can never drift out of sync."""
     if not text:
         return False
-    if EMAIL_RE.search(text) or PHONE_RE.search(text) or PHONE_SPACED_RE.search(text):
+    if (EMAIL_RE.search(text) or PHONE_RE.search(text) or PHONE_SPACED_RE.search(text)
+            or LANDLINE_RE.search(text)):
         return True
     for m in _DIGIT_RUN_RE.finditer(text):
         if len(re.findall(r"\d{4}", m.group())) == 3:
