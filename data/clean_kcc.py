@@ -25,8 +25,7 @@ EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 # cover mobile numbers (leading 6-9). Landlines lead with 0, so the 0-prefix
 # is itself a strong anchor against false positives on price/crop-code
 # ranges (those never start with 0 followed by a hyphenated 6-8 digit run).
-LANDLINE_RE = re.compile(r"\b0\d{2,4}[\-\s]\d{6,8}\b")
-
+LANDLINE_RE = re.compile(r"\b0\d{2,5}[\-\s]?\d{5,8}\b")
 # Aadhaar-shaped (\d{4}\s?\d{4}\s?\d{4}) collides heavily with real KCC text:
 # weather-forecast day sequences, mandi price lists, and crop-variety code
 # lists all produce runs of 4+ consecutive 4-digit groups (see D5 false-positive
