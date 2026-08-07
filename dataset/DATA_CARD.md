@@ -3,8 +3,8 @@
 ## Dataset
 - Name: KCC instruction dataset v1
 - File: dataset/kcc_instruct_v1.jsonl
-- Final training rows: 135846
-- Language: English (`en`)
+- Final training rows: 69670
+- Languages: en, hi, gu, mr, ta, bn, kn, pa (7 machine-translated via NLLB, see notes)
 - Dataset version hash: see `dataset/VERSION`
 
 ## Data Quality Gates
@@ -27,6 +27,8 @@ Held-out evaluation data:
 - Frozen hashes: `eval/heldout/HASHES.md`
 
 ## Notes
+
+7 of 8 languages (hi/gu/mr/ta/bn/kn/pa) are machine-translated from English via facebook/nllb-200-distilled-600M, not native transcripts. English (en) is the original KCC text.
 
 The dataset was cleaned using the KCC cleaning pipeline:
 - garbage removal
