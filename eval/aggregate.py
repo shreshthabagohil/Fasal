@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -78,18 +79,33 @@ def mcnemar_p_value(ours_wins, base_wins):
 
 
 def read_metadata():
+    # Reads the two identifiers that pin this report to an exact
+    # dataset + held-out snapshot, so a judge can verify which data
+    # this number was measured on (RULEBOOK / 05 cold-reproduce guarantee).
     repo_root = Path(__file__).resolve().parents[1]
 
     dataset_version_path = repo_root / "dataset" / "VERSION"
-    heldout_path = repo_root / "eval" / "heldout" / "D3_FLAGGED.md"
+    hashes_path = repo_root / "eval" / "heldout" / "HASHES.md"
 
     dataset_version = dataset_version_path.read_text(
         encoding="utf-8"
     ).strip()
 
-    heldout_hash = hashlib.sha256(
-        heldout_path.read_bytes()
-    ).hexdigest()
+    hashes_text = hashes_path.read_text(encoding="utf-8")
+
+    # HASHES.md format (frozen at build time), e.g.:
+    #   - heldout: 1226 rows, hash=150979417f9c
+    # Parse the real held-out hash out of that line instead of hashing
+    # an unrelated file (a prior bug here hashed D3_FLAGGED.md, which
+    # is a paraphrase-audit report, not the held-out set itself).
+    match = re.search(r"heldout:.*?hash=([0-9a-fA-F]+)", hashes_text)
+
+    if not match:
+        raise ValueError(
+            f"could not find a 'heldout: ... hash=<hex>' line in {hashes_path}"
+        )
+
+    heldout_hash = match.group(1)
 
     return dataset_version, heldout_hash
 
