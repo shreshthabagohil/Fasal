@@ -1,0 +1,55 @@
+# Fasal — QLoRA iter-0 config (M3 step 7)
+# These are the knobs we FIX ourselves (never searched by AutoScientist),
+# per train/A0_LOCKED.md. Whichever base wins the A/B (see base_candidates
+# below), copy its block's values into the "chosen" section and fill in
+# base_commit_sha once locked.
+#
+# If AutoScientist's UI turns out to expose NO training-hyperparameter
+# screen at all (only the data-recipe screen found at M0 — Prompt
+# Rephrase/Dedup/House Special/etc.), this file is still the source of
+# truth for a LOCAL fallback run (transformers + peft + bitsandbytes,
+# already pinned in requirements.txt) so the run stays reproducible either way.
+
+seed: 1729
+dataset_version_hash: "5741495f65f43cef14ae1e5a44e2f54b18560dccdbae94613deb6c33c3441912"  # dataset/VERSION
+
+qlora:
+  quant: "nf4"
+  bits: 4
+  double_quant: true
+  compute_dtype: "bf16"
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: "all-linear"
+  bias: "none"
+
+training:
+  num_train_epochs: 3
+  max_seq_length: 2048
+  learning_rate: 2.0e-4        # standard QLoRA starting point; adjust only with a logged reason
+  lr_scheduler: "cosine"
+  warmup_ratio: 0.03
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  optim: "paged_adamw_8bit"
+
+# Base A/B candidates (M3) — fill "chosen" once the winner is picked.
+base_candidates:
+  - name: "sarvamai/sarvam-1"
+    commit_sha: "<fill after HF check>"
+    license: "Sarvam AI Research License (non-commercial-flavored)"
+  - name: "google/gemma-2-2b"
+    commit_sha: "<fill after HF check>"
+    license: "Gemma Terms of Use"
+
+chosen:
+  base_model: "<fill at M3 step 12, after A/B>"
+  base_commit_sha: "<fill at M3 step 12>"
+
+wandb:
+  entity: "shreshthabagohil-personal"
+  project: "fasal"
+  run_name_prefix: "iter"   # e.g. iter-0-sarvam, iter-0-gemma
