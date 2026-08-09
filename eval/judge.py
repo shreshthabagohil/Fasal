@@ -180,7 +180,7 @@ def _parse_judge_json_impl(content: str) -> Dict[str, Any]:
     parsed["rationale"] = str(parsed["rationale"])
 
     return parsed
-d
+
 
 class KeyPool:
     """Round-robins across multiple Groq API keys so one key hitting its
