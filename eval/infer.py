@@ -53,7 +53,7 @@ def parse_args():
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--max-new-tokens", type=int, default=512)
     ap.add_argument("--dtype", choices=["bf16", "fp16"], default="bf16")
-    ap.add_argument("--device", choices=["cuda", "cpu", "auto"], default="auto")
+    ap.add_argument("--device", choices=["cuda", "mps", "cpu", "auto"], default="auto")
     ap.add_argument("--seed", type=int, default=1729)
     return ap.parse_args()
 
@@ -95,24 +95,26 @@ def main():
 
     compute_dtype = torch.bfloat16 if args.dtype == "bf16" else torch.float16
 
-    if args.device == "auto":
-        device_map = "auto"
-    elif args.device == "cuda":
-        device_map = {"": "cuda"}
-    else:
-        device_map = {"": "cpu"}
+    def detect_device() -> str:
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.backends.mps.is_available():  # Apple Silicon (M1/M2/M3/M4) GPU
+            return "mps"
+        return "cpu"
+
+    resolved_device = detect_device() if args.device == "auto" else args.device
+    device_map = {"": resolved_device}
 
     rows = load_rows(args.heldout)
     print(f"[infer] loaded {len(rows)} rows from {args.heldout}", flush=True)
+    print(f"[infer] resolved device: {resolved_device}", flush=True)
 
     tokenizer = AutoTokenizer.from_pretrained(args.base, revision=args.base_sha)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
 
-    use_cuda = args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available())
-
-    if use_cuda:
+    if resolved_device == "cuda":
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
@@ -125,10 +127,28 @@ def main():
             quantization_config=bnb_config,
             device_map=device_map,
         )
+    elif resolved_device == "mps":
+        # bitsandbytes 4-bit NF4 needs a CUDA backend, which Apple Silicon
+        # does not have. Load directly on the Mac's GPU (MPS) in fp16 instead
+        # of falling all the way back to CPU -- much faster on a MacBook
+        # (M1/M2/M3/M4), just without 4-bit quantization.
+        print(
+            "[infer] no CUDA device — using Apple Silicon MPS GPU (fp16, no 4-bit quant)",
+            flush=True,
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            args.base,
+            revision=args.base_sha,
+            torch_dtype=torch.float16,
+            device_map=device_map,
+        )
     else:
-        # CPU fallback (smoke tests / tiny models): 4-bit NF4 requires a CUDA
-        # bitsandbytes backend, so on CPU we load in full precision instead.
-        print("[infer] WARNING: no CUDA device — loading without 4-bit NF4 (CPU smoke-test path only)", flush=True)
+        # CPU fallback (smoke tests / tiny models): slowest path, only used
+        # when neither a CUDA nor an MPS GPU is available.
+        print(
+            "[infer] WARNING: no CUDA/MPS device — loading without 4-bit NF4 on CPU (slow; smoke-test path only)",
+            flush=True,
+        )
         model = AutoModelForCausalLM.from_pretrained(
             args.base,
             revision=args.base_sha,
