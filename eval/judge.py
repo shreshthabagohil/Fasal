@@ -112,7 +112,27 @@ def build_user_message(
     return message
 
 
+class JudgeOutputParseError(ValueError):
+    """Raised when the judge response body is not valid/expected JSON.
+
+    Carries the raw response text so the caller can log and persist it
+    for debugging (T03 spec step 9: unparseable judge output must be
+    written as {"id","error","raw"}).
+    """
+
+    def __init__(self, message: str, raw: str):
+        super().__init__(message)
+        self.raw = raw
+
+
 def parse_judge_json(content: str) -> Dict[str, Any]:
+    try:
+        return _parse_judge_json_impl(content)
+    except ValueError as exc:
+        raise JudgeOutputParseError(str(exc), raw=content) from exc
+
+
+def _parse_judge_json_impl(content: str) -> Dict[str, Any]:
     text = content.strip()
 
     try:
@@ -493,6 +513,12 @@ def main() -> int:
                     "id": row_id,
                     "error": str(exc),
                 }
+
+                # T03 spec step 9: unparseable judge output must also
+                # carry the raw response text for debugging.
+                raw = getattr(exc, "raw", None)
+                if raw is not None:
+                    error_result["raw"] = raw
 
                 output_handle.write(
                     json.dumps(error_result, ensure_ascii=False) + "\n"
