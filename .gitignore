@@ -34,3 +34,4 @@ __pycache__/
 08_MILESTONE_LOG.md
 fasal-kcc-instruct/
 .fuse_hidden*
+!eval/reports/judge_anchor_scores.csv
