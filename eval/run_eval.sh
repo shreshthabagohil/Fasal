@@ -1,16 +1,60 @@
 #!/usr/bin/env bash
-# Runs the held-out eval and prints baseline-vs-ours with significance.
-# Fill in the generation + judging steps once the base model + judge are chosen (M2).
+# End-to-end held-out evaluation:
+# base inference -> ours inference -> blind dual-order judge
+# -> aggregate -> human-readable report.
+
 set -euo pipefail
 
-# 1) generate answers from BASE and OURS on the held-out set  (TODO: infer.py)
-# python eval/infer.py --model base   --heldout eval/heldout/test.jsonl --out eval/out/base.jsonl
-# python eval/infer.py --model ours   --heldout eval/heldout/test.jsonl --out eval/out/ours.jsonl
+: "${BASE_MODEL:?set BASE_MODEL=<org/base>}"
+: "${BASE_SHA:?export BASE_SHA=<pinned HF commit SHA>}"
+: "${ADAPTER_REPO:?export ADAPTER_REPO=<hf-user/adapter-or-local-path>}"
 
-# 2) LLM-judge blind A/B -> per-item scores  (TODO: judge.py, uses judge_rubric.md)
-# python eval/judge.py --base eval/out/base.jsonl --ours eval/out/ours.jsonl --out eval/out/scores.jsonl
+HELDOUT="${HELDOUT:-eval/heldout/test.jsonl}"
+OUT_DIR="${OUT_DIR:-eval/out}"
+REPORT_DIR="${REPORT_DIR:-eval/reports}"
+SEED="${SEED:-1729}"
 
-# 3) significance
-python eval/bootstrap.py --scores eval/out/scores.jsonl
+mkdir -p "$OUT_DIR" "$REPORT_DIR"
 
-echo "TODO: implement infer.py + judge.py once base model + judge model are locked (M2)."
+# 1) Base-only inference.
+python eval/infer.py \
+  --base "$BASE_MODEL" \
+  --base-sha "$BASE_SHA" \
+  --heldout "$HELDOUT" \
+  --out "$OUT_DIR/base.jsonl" \
+  --batch-size 8 \
+  --max-new-tokens 512 \
+  --seed "$SEED"
+
+# 2) Base + adapter inference (ours).
+python eval/infer.py \
+  --base "$BASE_MODEL" \
+  --base-sha "$BASE_SHA" \
+  --adapter "$ADAPTER_REPO" \
+  --heldout "$HELDOUT" \
+  --out "$OUT_DIR/ours.jsonl" \
+  --batch-size 8 \
+  --max-new-tokens 512 \
+  --seed "$SEED"
+
+# 3) Blind A/B LLM judge, dual-order.
+python eval/judge.py \
+  --heldout "$HELDOUT" \
+  --base "$OUT_DIR/base.jsonl" \
+  --ours "$OUT_DIR/ours.jsonl" \
+  --out "$OUT_DIR/scores.jsonl" \
+  --model llama-3.3-70b-versatile \
+  --temperature 0 \
+  --seed "$SEED" \
+  --dual-order
+
+# 4) Aggregate + significance.
+python eval/aggregate.py \
+  --scores "$OUT_DIR/scores.jsonl" \
+  --out "$REPORT_DIR/eval_report.json" \
+  --bootstrap-n 10000 \
+  --seed "$SEED"
+
+# 5) Print the report.
+python eval/print_report.py \
+  --report "$REPORT_DIR/eval_report.json"
