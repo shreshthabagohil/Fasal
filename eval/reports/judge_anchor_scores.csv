@@ -1,41 +1,41 @@
 id,lang,question,context,output,human_lead,human_t3,judge
-kcc-a7c5cd1ee49c,hi,किसान क्रेडिट कार्ड की जानकारी के बारे में पूछना,State: TAMILNADU | Crop: Others | Type: Credit,::::::::: 166: 7,,,
-kcc-4b3306104772,hi,नारियल टोनिक की आवश्यकता के बारे में पूछताछ,State: TAMILNADU | Crop: Coconut | Season: JAYAD | Type: Seeds and Planting Material,फसल भौतिकी विभाग से संपर्क करने की सिफारिश की गई।,,,
-kcc-df2fffe87038,hi,फूल और फल गिरने को कैसे नियंत्रित करें,State: HARYANA | Crop: Tomato | Season: JAYAD | Type: Floriculture,फूल और फल गिरने को कैसे नियंत्रित करें स्प्रे 1 ml प्लानफिक्स प्रति 45 लीटर पानी,,,
-kcc-d0f9af9b58bc,hi,पडी फसल में खरपतवार नियंत्रण,State: ODISHA | Crop: Paddy Dhan | Type: Weed Management,24 डी सोडियम नमक 5ML1 लीटर पानी का स्प्रे करने की सिफारिश की जाती है,,,
-kcc-fd22db09d890,hi,नर्सरी मुझे मोटा है,State: UTTAR PRADESH | Crop: Mentha | Type: 95,दाव न डेल,,,
-kcc-c393bc8afc87,hi,मुझे पोमग्रेन्ट की रोपण की समय के बारे में बताओ,State: HIMACHAL PRADESH | Crop: 1325 | Season: KHARIF | Type: 85,डेक-जन से पोमग्रांट की रोपण का समय,,,
-kcc-372c09182e7c,hi,कॉटन क्रॉप में पत्ती के कर्ल के नियंत्रण के बारे में सूचना,State: PUNJAB | Crop: Cotton Kapas | Type: 0,स्प्रे आवास 40 EC 600 ML या 800 ML ईथियन 50EC प्रति एकड़ 100 लीटर पानी में,,,
-kcc-b150d804aaab,hi,मश्रूम की जानकरी,State: UTTAR PRADESH | Crop: Mushroom | Season: KHARIF | Type: 89,KVK से संपर्क करें,,,
-kcc-12a32673461b,hi,हल्दी के बाजार दर- बासमट,State: MAHARASHTRA | Crop: Turmeric | Type: Market Information,हल्दी के बाजार दर- बासमैटक्विनटल- 7600- 9400- 8500- रुपये प्रति व्यक्ति,,,
-kcc-83a8a127894a,hi,किसान भंडी की विविधता के बारे में जानकारी चाहता है,State: MADHYA PRADESH | Crop: BhindiOkraLadysfinger | Type: Vegetative Propagation and Tissue Culture,जैव बीज अवानतीका अवानतीका गोल्डसिंजेन्टा इंडिया लिमिटेडनंबर 152नंबर 597नौन्हेम्स इंडिया लिमिटेडसोनल शक्तिरासी बीज साहिबा शानुस कृषि बीज 7902 9महाइकोन 64VNR बीज गहन,,,
-kcc-31b830f0d96d,hi,मिट्टी का अनुप्रयोग,State: ANDHRA PRADESH | Crop: Paddy Dhan | Type: Soil Testing,500 किलोग्राम गैंपस के लिए अनुशंसित,,,
-kcc-815cefcf080f,hi,प्रश्न- गेहूं की फसल में कीटों के भंडारण को कैसे नियंत्रित किया जा सकता है,State: MADHYA PRADESH | Crop: Wheat | Type: Storage,गेहूं की फसल भंडारण आप कीट नियंत्रण के लिए आवेदन कर सकते हैंEdb एक 3 मिलीलीटर इंजेक्शन का उपयोग करके क्या Ia 22 ग्राम प्रति घन मीटर और यह ध्यान दिया जाना चाहिए कि हवा के इंजेक्शन के 7 दिनों के बाद टूटने के पात्रों या Melathyon 50 Ec 3 Min Lee 100 वर्ग मीटर पानी के साथ एक अनुपात में 1:100 में 15 दिन उपयोग अवधि में प्रवेश नहीं करना चाहिए,,,
-kcc-ccd76737453f,hi,रोगों पर नियंत्रण,State: HARYANA | Crop: Cold Water | Season: KHARIF | Type: Breeding and culture of ornamental fish,स्प्रे बाविस्टिन 2 ग्राम पानी,,,
-kcc-a6b37577fd96,hi,मुझे ग्रेनेट के पौधे लगाने के समय के बारे में बताओ,State: HIMACHAL PRADESH | Crop: 1325 | Season: KHARIF | Type: 85,ग्रेनेट के बोने का समय: से दिसम्बर,,,
-kcc-e9e9eb19dfbe,hi,पासुपालान जीवनगढ़ का नहीं,State: UTTAR PRADESH | Crop: Dog | Season: 0 | Type: Animal Nutrition,पासुपालान जीवन का नं. 18001805141 PAR SAMPARK KAREN,,,
-kcc-2798a2f04e95,hi,लैंटियों के बीज दर के बारे में जानकारी,State: HIMACHAL PRADESH | Crop: 959 | Season: KHARIF | Type: 19,लैंटिल की बीज दरः 10-12 किलो बिगहा,,,
-kcc-4f94ab2acb70,hi,कॉल को देखने के लिए डिस्कनेक्ट,State: BIHAR | Crop: Groundnut pea nutmung phalli | Type: Power Roads etc,- मैं - मैं,,,
-kcc-9f137bfe3d9f,hi,मुझे बताओ कि भाषाओं की विविधता क्या है,State: RAJASTHAN | Crop: Bengal Gram GramChick PeaKabuliChana | Type: Seeds,RMO-40RMO-225 भाषा का प्रकार,,,
-kcc-b277cbc588d6,hi,चिली में शोक के समय के बारे में बताएं,State: RAJASTHAN | Crop: Chillies | Type: Nursery Management,50 4050 30-40,,,
-kcc-659f1600550e,hi,घास नियंत्रण,State: ODISHA | Crop: Fresh Water | Type: Fish Fingerling Production,ब्लॉक स्तर पर संपर्क करें,,,
-kcc-73a2b19c2ba4,gu,મધમાખીઓ માટે તાલીમ,State: TAMILNADU | Crop: Beekeeping | Season: JAYAD | Type: 16,kvk ને વિગતો સમજાવીને સંપર્ક કરો,,,
-kcc-0923fe9a3b3b,gu,ગ્રીન હાઉસ પર કેટલી સબસિડી છે તે અંગેની માહિતી,State: HIMACHAL PRADESH | Crop: Others | Season: KHARIF | Type: 8,આ માટે સૌથી નજીકના કૃષિ વિભાગના સંપર્ક માટે ગ્રીનહાઉસ પર 80 સબસિડી,,,
-kcc-0e9bc03becdf,gu,પિપ્સ સુપર હર્બિસાઇડ વિશે પૂછવામાં,State: MAHARASHTRA | Crop: Onion | Type: Cultural Practices,- - - - તમે શું કરો છો ?,,,
-kcc-42522487d520,gu,પેડી 25 દિવસ માટે ટોચના ખાતર વ્યવસ્થાપન વિશે પૂછવામાં આવ્યું,State: TAMILNADU | Crop: Paddy Dhan | Type: Nutrient Management,:: 25 15 5,,,
-kcc-f74a96a6eaa7,gu,હું ગ્રીન હાઉસ પર સબસિડી લેવા માંગુ છું,State: RAJASTHAN | Crop: Others | Season: JAYAD | Type: 88,AG સુપરવાઇઝર અથવા AG ઓફિસ અથવા ADH-JAIPUR સાથે સંપર્ક,,,
-kcc-064cdbc7b091,gu,મને માટી આરોગ્ય કાર્ડ વિશે કહો,State: RAJASTHAN | Crop: Others | Season: KHARIF | Type: Soil Testing,સંપર્ક એજી સુપરવાઇઝર અથવા સહાયક કૃષિ અધિકારી,,,
-kcc-b09f8caec2c6,gu,કેવી રીતે આપણા દૂધની ગાય સુધારવા,State: HIMACHAL PRADESH | Crop: BovineCowBuffalo | Season: KHARIF | Type: 40,ઓસ્ટોકેલ્શિયમ 40-45 મિલી મિશ્રણનો ઉપયોગ કરો 30-35 ગ્રામ દિવસ,,,
-kcc-f114af20cca8,gu,માછલીઓમાં પોષણ,State: ODISHA | Crop: Fresh Water | Type: Fishery Nutrition,માછલીઓમાં પોષણ- તમારા બ્લોકના માછીમારી અધિકારી સાથે સંપર્ક,,,
-kcc-7897c60de57d,gu,મને કહો લીંબુ વૃદ્ધિ અફકૃત,State: RAJASTHAN | Crop: Acid Lime | Season: JAYAD | Type: Floriculture,ઉપયોગ-મૅન્યુર અને ખાતર,,,
-kcc-08626f421266,gu,ઔષધીય પાકનું કાપવું,State: JHARKAND | Crop: Aloe Vera | Type: Medicinal and Aromatic Plants,ડૉ. ઉદય કુમારપ્રોગ્રામ કોઓર્ડિનેટરકૃશી વિજ્ઞાન કેન્દ્રા બાપુ પતાવાર નજીક બ્લોકડસ્ટટ બોકરાઓ- 829 121ઇમેઇલઃ kvkbokaroyahoocoinudaykumarsinghyahoocoin06549-265048 - -09431126991,,,
-kcc-c333f4cdecec,gu,લસણનું સંગ્રહ,State: UTTAR PRADESH | Crop: Onion | Season: JAYAD | Type: Post Harvest Management Cleaning Grading Packaging Food Processing Cool Chain etc,જમીન ઉપર સ્વચ્છ રૂમમાં સંગ્રહ લસણ,,,
-kcc-017aa7a1dc72,gu,ખેડૂત દ્વારા પૂછવામાં આવ્યું છે.,State: UTTAR PRADESH | Crop: Mango | Type: Vegetative Propagation and Tissue Culture,ઇન્સ્ટિટ્યૂટ ઓફ હોર્ટીકલ્ચર સરનામું: 42A એનસીઆર નોલેજ પાર્ક III ગ્રેટર નોઈડા દિલ્હી ઉત્તરપ્રદેશ 201310 કલાકઃ ખુલ્લો બંધ 5:30pmફોન: 011 4660 4988,,,
-kcc-dcbd7b9c3584,gu,ગંધના કાટ પર નિયંત્રણ વિશે પૂછવામાં આવ્યું,State: ANDHRA PRADESH | Crop: 1137 | Season: KHARIF | Type: 2,કાર્બેન્ડાઝિમ 05-1GLIT છાંટવાની ભલામણ કરવામાં આવે છે,,,
-kcc-96aeea981595,gu,ખેડૂતને લીલા ગ્રામ પાકમાં લસણ કરનાર જંતુને કેવી રીતે નિયંત્રિત કરવું તે અંગે માહિતીની જરૂર છે,State: MADHYA PRADESH | Crop: Green Gram Moong Bean Moong | Type: Field Preparation,સ્પ્રે ડિમેથોએટ 30 EC 500 ml r 30 ml પ્રતિ પંપ,,,
-kcc-8694684786cc,gu,પ્રધાનમંત્રી કિસાન ઇકયસી,State: JAMMU AND KASHMIR | Crop: Others | Type: Government Schemes,પ્રધાનમંત્રીની હેઠળની ઇકાયસી કિસાન યોજના દરેક રજિસ્ટર્ડ ખેડૂત માટે ફરજિયાત છે,,,
-kcc-3ed42de79c37,gu,હું અરેકાનટ અને નાકબત્તીની વધુ સારી જાતો ક્યાંથી મેળવી શકું?,State: ODISHA | Crop: Arecanut | Type: Seeds and Planting Material,કૃષિ વિજયન કેંદ્રા ચેસર કોકોસ ડેવલપમેન્ટ બોર્ડ સાથે સંપર્ક કરવાની સલાહ આપવી - 06742550439,,,
-kcc-6cca787645d6,gu,બકરી માટે વીર્યના સ્ટ્રો વિશે પૂછતા,State: ASSAM | Crop: Goat | Type: Artificial Insemination,બકરી માટે સ્પર્મ સ્ટ્રો વિશે જરૂરી માહિતી માટે સ્થાનિક વેટરનરી હોસ્પિટલમાં સંપર્ક કરવાનું સૂચન કર્યું,,,
-kcc-9cf5324bb95f,gu,મને બજાર માહિતી જણાવો,State: RAJASTHAN | Crop: Garlic | Season: 0 | Type: Market Information,12122018મંડિઃ કોટા એફવી કોમોડિટીઃ લસણમોડલ ભાવ: 1425ક્વિન્ટલ,,,
-kcc-5f628ac715d3,gu,માછીમારી યોજના સાથે સંબંધિત માહિતી,State: UTTAR PRADESH | Crop: Fresh Water | Type: Water Testing for Fish Production,- -18001805661,,,
-kcc-cbacde25003b,gu,કોટન મેનેજમેન્ટ,State: MAHARASHTRA | Crop: Cotton Kapas | Type: 20,હેક્સાગોનાઝોલ સ્પ્રે બેવિસ્ટિન તાબા પીવો,,,
+kcc-a7c5cd1ee49c,hi,किसान क्रेडिट कार्ड की जानकारी के बारे में पूछना,State: TAMILNADU | Crop: Others | Type: Credit,::::::::: 166: 7,1,,1
+kcc-4b3306104772,hi,नारियल टोनिक की आवश्यकता के बारे में पूछताछ,State: TAMILNADU | Crop: Coconut | Season: JAYAD | Type: Seeds and Planting Material,फसल भौतिकी विभाग से संपर्क करने की सिफारिश की गई।,5,,2
+kcc-df2fffe87038,hi,फूल और फल गिरने को कैसे नियंत्रित करें,State: HARYANA | Crop: Tomato | Season: JAYAD | Type: Floriculture,फूल और फल गिरने को कैसे नियंत्रित करें स्प्रे 1 ml प्लानफिक्स प्रति 45 लीटर पानी,2,,5
+kcc-d0f9af9b58bc,hi,पडी फसल में खरपतवार नियंत्रण,State: ODISHA | Crop: Paddy Dhan | Type: Weed Management,24 डी सोडियम नमक 5ML1 लीटर पानी का स्प्रे करने की सिफारिश की जाती है,2,,2
+kcc-fd22db09d890,hi,नर्सरी मुझे मोटा है,State: UTTAR PRADESH | Crop: Mentha | Type: 95,दाव न डेल,1,,1
+kcc-c393bc8afc87,hi,मुझे पोमग्रेन्ट की रोपण की समय के बारे में बताओ,State: HIMACHAL PRADESH | Crop: 1325 | Season: KHARIF | Type: 85,डेक-जन से पोमग्रांट की रोपण का समय,2,,1
+kcc-372c09182e7c,hi,कॉटन क्रॉप में पत्ती के कर्ल के नियंत्रण के बारे में सूचना,State: PUNJAB | Crop: Cotton Kapas | Type: 0,स्प्रे आवास 40 EC 600 ML या 800 ML ईथियन 50EC प्रति एकड़ 100 लीटर पानी में,3,,5
+kcc-b150d804aaab,hi,मश्रूम की जानकरी,State: UTTAR PRADESH | Crop: Mushroom | Season: KHARIF | Type: 89,KVK से संपर्क करें,4,,1
+kcc-12a32673461b,hi,हल्दी के बाजार दर- बासमट,State: MAHARASHTRA | Crop: Turmeric | Type: Market Information,हल्दी के बाजार दर- बासमैटक्विनटल- 7600- 9400- 8500- रुपये प्रति व्यक्ति,2,,1
+kcc-83a8a127894a,hi,किसान भंडी की विविधता के बारे में जानकारी चाहता है,State: MADHYA PRADESH | Crop: BhindiOkraLadysfinger | Type: Vegetative Propagation and Tissue Culture,जैव बीज अवानतीका अवानतीका गोल्डसिंजेन्टा इंडिया लिमिटेडनंबर 152नंबर 597नौन्हेम्स इंडिया लिमिटेडसोनल शक्तिरासी बीज साहिबा शानुस कृषि बीज 7902 9महाइकोन 64VNR बीज गहन,2,,2
+kcc-31b830f0d96d,hi,मिट्टी का अनुप्रयोग,State: ANDHRA PRADESH | Crop: Paddy Dhan | Type: Soil Testing,500 किलोग्राम गैंपस के लिए अनुशंसित,1,,2
+kcc-815cefcf080f,hi,प्रश्न- गेहूं की फसल में कीटों के भंडारण को कैसे नियंत्रित किया जा सकता है,State: MADHYA PRADESH | Crop: Wheat | Type: Storage,गेहूं की फसल भंडारण आप कीट नियंत्रण के लिए आवेदन कर सकते हैंEdb एक 3 मिलीलीटर इंजेक्शन का उपयोग करके क्या Ia 22 ग्राम प्रति घन मीटर और यह ध्यान दिया जाना चाहिए कि हवा के इंजेक्शन के 7 दिनों के बाद टूटने के पात्रों या Melathyon 50 Ec 3 Min Lee 100 वर्ग मीटर पानी के साथ एक अनुपात में 1:100 में 15 दिन उपयोग अवधि में प्रवेश नहीं करना चाहिए,1,,2
+kcc-ccd76737453f,hi,रोगों पर नियंत्रण,State: HARYANA | Crop: Cold Water | Season: KHARIF | Type: Breeding and culture of ornamental fish,स्प्रे बाविस्टिन 2 ग्राम पानी,1,,1
+kcc-a6b37577fd96,hi,मुझे ग्रेनेट के पौधे लगाने के समय के बारे में बताओ,State: HIMACHAL PRADESH | Crop: 1325 | Season: KHARIF | Type: 85,ग्रेनेट के बोने का समय: से दिसम्बर,2,,2
+kcc-e9e9eb19dfbe,hi,पासुपालान जीवनगढ़ का नहीं,State: UTTAR PRADESH | Crop: Dog | Season: 0 | Type: Animal Nutrition,पासुपालान जीवन का नं. 18001805141 PAR SAMPARK KAREN,4,,1
+kcc-2798a2f04e95,hi,लैंटियों के बीज दर के बारे में जानकारी,State: HIMACHAL PRADESH | Crop: 959 | Season: KHARIF | Type: 19,लैंटिल की बीज दरः 10-12 किलो बिगहा,5,,5
+kcc-4f94ab2acb70,hi,कॉल को देखने के लिए डिस्कनेक्ट,State: BIHAR | Crop: Groundnut pea nutmung phalli | Type: Power Roads etc,- मैं - मैं,1,,1
+kcc-9f137bfe3d9f,hi,मुझे बताओ कि भाषाओं की विविधता क्या है,State: RAJASTHAN | Crop: Bengal Gram GramChick PeaKabuliChana | Type: Seeds,RMO-40RMO-225 भाषा का प्रकार,1,,1
+kcc-b277cbc588d6,hi,चिली में शोक के समय के बारे में बताएं,State: RAJASTHAN | Crop: Chillies | Type: Nursery Management,50 4050 30-40,1,,1
+kcc-659f1600550e,hi,घास नियंत्रण,State: ODISHA | Crop: Fresh Water | Type: Fish Fingerling Production,ब्लॉक स्तर पर संपर्क करें,3,,1
+kcc-73a2b19c2ba4,gu,મધમાખીઓ માટે તાલીમ,State: TAMILNADU | Crop: Beekeeping | Season: JAYAD | Type: 16,kvk ને વિગતો સમજાવીને સંપર્ક કરો,5,,1
+kcc-0923fe9a3b3b,gu,ગ્રીન હાઉસ પર કેટલી સબસિડી છે તે અંગેની માહિતી,State: HIMACHAL PRADESH | Crop: Others | Season: KHARIF | Type: 8,આ માટે સૌથી નજીકના કૃષિ વિભાગના સંપર્ક માટે ગ્રીનહાઉસ પર 80 સબસિડી,5,,3
+kcc-0e9bc03becdf,gu,પિપ્સ સુપર હર્બિસાઇડ વિશે પૂછવામાં,State: MAHARASHTRA | Crop: Onion | Type: Cultural Practices,- - - - તમે શું કરો છો ?,1,,1
+kcc-42522487d520,gu,પેડી 25 દિવસ માટે ટોચના ખાતર વ્યવસ્થાપન વિશે પૂછવામાં આવ્યું,State: TAMILNADU | Crop: Paddy Dhan | Type: Nutrient Management,:: 25 15 5,1,,1
+kcc-f74a96a6eaa7,gu,હું ગ્રીન હાઉસ પર સબસિડી લેવા માંગુ છું,State: RAJASTHAN | Crop: Others | Season: JAYAD | Type: 88,AG સુપરવાઇઝર અથવા AG ઓફિસ અથવા ADH-JAIPUR સાથે સંપર્ક,5,,3
+kcc-064cdbc7b091,gu,મને માટી આરોગ્ય કાર્ડ વિશે કહો,State: RAJASTHAN | Crop: Others | Season: KHARIF | Type: Soil Testing,સંપર્ક એજી સુપરવાઇઝર અથવા સહાયક કૃષિ અધિકારી,5,,3
+kcc-b09f8caec2c6,gu,કેવી રીતે આપણા દૂધની ગાય સુધારવા,State: HIMACHAL PRADESH | Crop: BovineCowBuffalo | Season: KHARIF | Type: 40,ઓસ્ટોકેલ્શિયમ 40-45 મિલી મિશ્રણનો ઉપયોગ કરો 30-35 ગ્રામ દિવસ,4,,5
+kcc-f114af20cca8,gu,માછલીઓમાં પોષણ,State: ODISHA | Crop: Fresh Water | Type: Fishery Nutrition,માછલીઓમાં પોષણ- તમારા બ્લોકના માછીમારી અધિકારી સાથે સંપર્ક,4,,2
+kcc-7897c60de57d,gu,મને કહો લીંબુ વૃદ્ધિ અફકૃત,State: RAJASTHAN | Crop: Acid Lime | Season: JAYAD | Type: Floriculture,ઉપયોગ-મૅન્યુર અને ખાતર,2,,2
+kcc-08626f421266,gu,ઔષધીય પાકનું કાપવું,State: JHARKAND | Crop: Aloe Vera | Type: Medicinal and Aromatic Plants,ડૉ. ઉદય કુમારપ્રોગ્રામ કોઓર્ડિનેટરકૃશી વિજ્ઞાન કેન્દ્રા બાપુ પતાવાર નજીક બ્લોકડસ્ટટ બોકરાઓ- 829 121ઇમેઇલઃ kvkbokaroyahoocoinudaykumarsinghyahoocoin06549-265048 - -09431126991,3,,1
+kcc-c333f4cdecec,gu,લસણનું સંગ્રહ,State: UTTAR PRADESH | Crop: Onion | Season: JAYAD | Type: Post Harvest Management Cleaning Grading Packaging Food Processing Cool Chain etc,જમીન ઉપર સ્વચ્છ રૂમમાં સંગ્રહ લસણ,4,,3
+kcc-017aa7a1dc72,gu,ખેડૂત દ્વારા પૂછવામાં આવ્યું છે.,State: UTTAR PRADESH | Crop: Mango | Type: Vegetative Propagation and Tissue Culture,ઇન્સ્ટિટ્યૂટ ઓફ હોર્ટીકલ્ચર સરનામું: 42A એનસીઆર નોલેજ પાર્ક III ગ્રેટર નોઈડા દિલ્હી ઉત્તરપ્રદેશ 201310 કલાકઃ ખુલ્લો બંધ 5:30pmફોન: 011 4660 4988,4,,1
+kcc-dcbd7b9c3584,gu,ગંધના કાટ પર નિયંત્રણ વિશે પૂછવામાં આવ્યું,State: ANDHRA PRADESH | Crop: 1137 | Season: KHARIF | Type: 2,કાર્બેન્ડાઝિમ 05-1GLIT છાંટવાની ભલામણ કરવામાં આવે છે,5,,5
+kcc-96aeea981595,gu,ખેડૂતને લીલા ગ્રામ પાકમાં લસણ કરનાર જંતુને કેવી રીતે નિયંત્રિત કરવું તે અંગે માહિતીની જરૂર છે,State: MADHYA PRADESH | Crop: Green Gram Moong Bean Moong | Type: Field Preparation,સ્પ્રે ડિમેથોએટ 30 EC 500 ml r 30 ml પ્રતિ પંપ,5,,2
+kcc-8694684786cc,gu,પ્રધાનમંત્રી કિસાન ઇકયસી,State: JAMMU AND KASHMIR | Crop: Others | Type: Government Schemes,પ્રધાનમંત્રીની હેઠળની ઇકાયસી કિસાન યોજના દરેક રજિસ્ટર્ડ ખેડૂત માટે ફરજિયાત છે,5,,3
+kcc-3ed42de79c37,gu,હું અરેકાનટ અને નાકબત્તીની વધુ સારી જાતો ક્યાંથી મેળવી શકું?,State: ODISHA | Crop: Arecanut | Type: Seeds and Planting Material,કૃષિ વિજયન કેંદ્રા ચેસર કોકોસ ડેવલપમેન્ટ બોર્ડ સાથે સંપર્ક કરવાની સલાહ આપવી - 06742550439,5,,5
+kcc-6cca787645d6,gu,બકરી માટે વીર્યના સ્ટ્રો વિશે પૂછતા,State: ASSAM | Crop: Goat | Type: Artificial Insemination,બકરી માટે સ્પર્મ સ્ટ્રો વિશે જરૂરી માહિતી માટે સ્થાનિક વેટરનરી હોસ્પિટલમાં સંપર્ક કરવાનું સૂચન કર્યું,3,,3
+kcc-9cf5324bb95f,gu,મને બજાર માહિતી જણાવો,State: RAJASTHAN | Crop: Garlic | Season: 0 | Type: Market Information,12122018મંડિઃ કોટા એફવી કોમોડિટીઃ લસણમોડલ ભાવ: 1425ક્વિન્ટલ,3,,2
+kcc-5f628ac715d3,gu,માછીમારી યોજના સાથે સંબંધિત માહિતી,State: UTTAR PRADESH | Crop: Fresh Water | Type: Water Testing for Fish Production,- -18001805661,1,,1
+kcc-cbacde25003b,gu,કોટન મેનેજમેન્ટ,State: MAHARASHTRA | Crop: Cotton Kapas | Type: 20,હેક્સાગોનાઝોલ સ્પ્રે બેવિસ્ટિન તાબા પીવો,1,,1
