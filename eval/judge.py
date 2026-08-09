@@ -6,7 +6,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import requests
 
@@ -182,9 +182,43 @@ def _parse_judge_json_impl(content: str) -> Dict[str, Any]:
     return parsed
 
 
+class KeyPool:
+    """Round-robins across multiple Groq API keys so one key hitting its
+    rate/daily limit doesn't stop the whole eval run. When a key gets a
+    429, it is put in cooldown and skipped until every other key has
+    also been tried once (then cooldown resets so a key that recovered
+    can be reused)."""
+
+    def __init__(self, keys: List[str]):
+        if not keys:
+            raise ValueError("KeyPool needs at least one API key")
+        self._keys = keys
+        self._index = 0
+        self._cooldown: Set[int] = set()
+
+    def get(self) -> str:
+        if len(self._cooldown) >= len(self._keys):
+            self._cooldown.clear()
+        for _ in range(len(self._keys)):
+            idx = self._index
+            key = self._keys[idx]
+            self._index = (self._index + 1) % len(self._keys)
+            if idx not in self._cooldown:
+                return key
+        # Should not happen given the clear() above, but stay safe.
+        return self._keys[0]
+
+    def mark_limited(self, key: str) -> None:
+        if key in self._keys:
+            self._cooldown.add(self._keys.index(key))
+
+    def __len__(self) -> int:
+        return len(self._keys)
+
+
 def request_judge(
     session: requests.Session,
-    api_key: str,
+    key_pool: KeyPool,
     model: str,
     temperature: float,
     seed: int,
@@ -192,11 +226,6 @@ def request_judge(
     max_retries: int,
     sleep_on_429: float,
 ) -> Dict[str, Any]:
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
     payload = {
         "model": model,
         "temperature": temperature,
@@ -212,6 +241,11 @@ def request_judge(
     last_error: Exception | None = None
 
     for attempt in range(max_retries + 1):
+        api_key = key_pool.get()
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
         try:
             response = session.post(
                 GROQ_URL,
@@ -223,8 +257,16 @@ def request_judge(
             status = response.status_code
 
             if status == 429:
+                # This key is rate/daily limited -- try a different key
+                # on the very next attempt instead of just sleeping on
+                # the same exhausted key.
+                key_pool.mark_limited(api_key)
+
                 if attempt >= max_retries:
                     response.raise_for_status()
+
+                if len(key_pool) > 1:
+                    continue  # immediately retry with the next key
 
                 time.sleep(sleep_on_429)
                 continue
@@ -345,10 +387,22 @@ def validate_id_sets(
 def main() -> int:
     args = parse_args()
 
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        print("ERROR: GROQ_API_KEY is not set.", file=sys.stderr)
+    raw_keys = os.environ.get("GROQ_API_KEYS") or os.environ.get("GROQ_API_KEY")
+    if not raw_keys:
+        print(
+            "ERROR: set GROQ_API_KEYS (comma-separated, e.g. "
+            "'gsk_key1,gsk_key2,gsk_key3') or, for a single key, GROQ_API_KEY.",
+            file=sys.stderr,
+        )
         return 2
+
+    keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+    if not keys:
+        print("ERROR: GROQ_API_KEYS/GROQ_API_KEY is empty.", file=sys.stderr)
+        return 2
+
+    key_pool = KeyPool(keys)
+    print(f"judge.py: using {len(key_pool)} Groq key(s) in rotation.", flush=True)
 
     if args.qps <= 0:
         print("ERROR: --qps must be greater than zero.", file=sys.stderr)
@@ -418,7 +472,7 @@ def main() -> int:
 
                 first = request_judge(
                     session=session,
-                    api_key=api_key,
+                    key_pool=key_pool,
                     model=args.model,
                     temperature=args.temperature,
                     seed=args.seed,
@@ -447,7 +501,7 @@ def main() -> int:
 
                     second = request_judge(
                         session=session,
-                        api_key=api_key,
+                        key_pool=key_pool,
                         model=args.model,
                         temperature=args.temperature,
                         seed=args.seed,
