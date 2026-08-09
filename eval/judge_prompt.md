@@ -26,4 +26,3 @@ BLIND A/B
 
 OUTPUT (JSON only, no other text)
 {"score_A": <int 1-5>, "score_B": <int 1-5>, "choice": "A"|"B"|"tie", "rationale": "<one sentence>"}
-
