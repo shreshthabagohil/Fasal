@@ -4,11 +4,11 @@
 
 Fasal fine-tunes an open language model on real Kisan Call Centre (KCC) farmer queries so it can answer agricultural questions in the language a farmer actually speaks, not just English. Agricultural expertise in India is locked behind a language barrier — a farmer in rural Karnataka asking about pest control has to think in English before most AI tools are useful to them. Fasal closes that gap directly, across 8 Indian languages.
 
-**Status:** Part 2 submitted. Iteration 0 (proof-of-concept adapter) is live and linked below. Iteration 1 — trained on the full 69,670-row dataset across staged Kaggle sessions — is in progress.
+**Status:** Iteration 0 — **complete**. A QLoRA adapter was trained end-to-end on real KCC data and published to Hugging Face, with verified held-out outputs in the model card (link below). Iteration 1 — the same pipeline re-run on the full 69,670-row dataset, staged across multiple Kaggle sessions — is training now as a follow-up improvement.
 
-**Model:** https://huggingface.co/Algo-Nova/fasal-sarvam1-lora
+**Model (trained + published, with sample outputs):** https://huggingface.co/Algo-Nova/fasal-sarvam1-lora
 **Dataset:** https://huggingface.co/datasets/Algo-Nova/fasal-kcc-instruct (69,670 real KCC query-response pairs, 8 languages)
-**Training notebook:** https://www.kaggle.com/code/shreshthabagohil/notebook51acbe7484
+**Training notebook (iteration 1, in progress):** https://www.kaggle.com/code/shreshthabagohil/notebook51acbe7484
 
 ## How scoring works
 
