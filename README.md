@@ -44,7 +44,7 @@ python data/clean_kcc.py --in data/raw/kcc.csv --out dataset/kcc_instruct_v1.jso
 python data/tests.py --dataset dataset/kcc_instruct_v1.jsonl  # must be all-green before training
 ```
 
-See `model_card/reproduce.sh` for exact steps to reproduce training from the published adapter.
+See `scripts/reproduce.sh` for exact steps to reproduce training from the published adapter.
 
 ## Engineering notes
 
@@ -64,4 +64,4 @@ AlgoNova — Shreshthaba P Gohil (lead), Anwesha Bhagat, Aratrika Anwita, Diksha
 
 ## License
 
-Apache 2.0 (inherits from base model — see `LICENSE_BASE_SARVAM.md`)
+Code in this repo: Apache 2.0. Base model (Sarvam-1) and any adapters/derivatives fine-tuned from it: **Sarvam AI Research License** — non-commercial, research-use only, with its own attribution and redistribution terms. See `LICENSE_BASE_SARVAM.md` for the full text.
