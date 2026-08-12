@@ -1,0 +1,43 @@
+---
+title: Fasal Advisor
+emoji: 🌾
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_file: app.py
+pinned: false
+license: other
+---
+
+# Fasal — Multilingual Farmer Advisor (demo)
+
+Live demo for **Fasal**, a QLoRA-fine-tuned `sarvamai/sarvam-1` adapter trained on
+real Kisan Call Centre (KCC) farmer queries across 8 Indian languages. Ask an
+agricultural question in Hindi, Gujarati, Marathi, Tamil, Bengali, Kannada, Punjabi,
+or English and get an answer in the same language.
+
+- **Model:** https://huggingface.co/Algo-Nova/fasal-sarvam1-lora
+- **Dataset:** https://huggingface.co/datasets/Algo-Nova/fasal-kcc-instruct
+- **Source (this Space + full project):** https://github.com/shreshthabagohil/Fasal
+
+## Running locally
+
+```bash
+cd demo
+pip install -r requirements.txt
+python app.py
+```
+
+Then open http://localhost:7860.
+
+## Notes
+
+- Runs on HF Spaces' free CPU Basic tier by default (bfloat16 weights, no GPU
+  quantization -- see `app.py` for why). First reply after a cold start takes
+  roughly a minute while the ~2.5B-param model loads; each reply after that takes
+  tens of seconds. This is a deliberate zero-budget tradeoff, not a bug.
+- `GET /health` reports load status (`loading` / `ready` / `error`) if the Space
+  seems stuck.
+- License: this demo serves a model derived from `sarvamai/sarvam-1`, which ships
+  under the Sarvam AI Research License (non-commercial-flavored). See
+  `LICENSE_BASE_SARVAM.md` in the main repo for the full text.
