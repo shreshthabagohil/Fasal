@@ -15,8 +15,14 @@ data/raw/
 checkpoints/
 wandb/
 
-# Held-out eval set (keep private so it can't leak into anyone's training)
-eval/heldout/
+# Held-out eval set — only the GENERATED data files are private (so they
+# can't leak into anyone's training); docs/scripts describing the audit
+# process (LEAKAGE_AUDIT.md, HASHES.md, build_test_set.py, D3_FLAGGED.md)
+# are meant to be tracked and public. A bare `eval/heldout/` here used to
+# gitignore the whole directory, which silently hid new files added under
+# it (you'd `git add` and nothing would happen, no error) -- narrowed to
+# just the data files it actually needs to keep private.
+eval/heldout/*.jsonl
 
 # Generated artifacts (the released dataset goes to HF/Kaggle, not git)
 dataset/*.jsonl
