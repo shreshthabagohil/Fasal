@@ -1,0 +1,20 @@
+# HF Space deps -- separate from the main repo's requirements.txt, this is what
+# the Space container installs. Pinned for reproducibility, same discipline as
+# the main repo (see ../requirements.txt).
+#
+# huggingface-hub is pinned explicitly, not left to gradio's own resolution:
+# gradio==4.44.1 imports `HfFolder` from huggingface_hub at startup, which was
+# removed in huggingface_hub>=0.26. pip's resolver doesn't reject that combo
+# (gradio's own upper bound is too loose), so an unpinned install can silently
+# pick a huggingface_hub that crashes the Space at import time with
+# "ImportError: cannot import name 'HfFolder'". Verified empirically in a
+# clean venv 2026-08-12.
+huggingface-hub==0.25.2
+gradio==4.44.1
+fastapi==0.115.0
+uvicorn==0.30.6
+transformers==4.43.3
+peft==0.12.0
+torch==2.3.1
+accelerate==0.33.0
+sentencepiece==0.2.0
