@@ -1,8 +1,9 @@
 # Fasal — QLoRA iter-0 config (M3 step 7)
 # These are the knobs we FIX ourselves (never searched by AutoScientist),
-# per train/A0_LOCKED.md. Whichever base wins the A/B (see base_candidates
-# below), copy its block's values into the "chosen" section and fill in
-# base_commit_sha once locked.
+# per train/A0_LOCKED.md. The base A/B against google/gemma-2-2b was
+# abandoned mid-event under GPU/Colab-quota and time pressure (see
+# 08_MILESTONE_LOG.md) -- sarvam-1 is the sole trained/shipped base, not a
+# measured A/B winner. base_candidates below is kept for provenance only.
 #
 # If AutoScientist's UI turns out to expose NO training-hyperparameter
 # screen at all (only the data-recipe screen found at M0 — Prompt
@@ -36,20 +37,22 @@ training:
   gradient_accumulation_steps: 4
   optim: "paged_adamw_8bit"
 
-# Base A/B candidates (M3) — fill "chosen" once the winner is picked.
+# Base A/B candidates (M3) -- kept for provenance; gemma-2-2b was never
+# trained (A/B abandoned, see header note above and train/A0_LOCKED.md).
 base_candidates:
   - name: "sarvamai/sarvam-1"
-    commit_sha: "<fill after HF check>"
+    commit_sha: "e9607337286ddf496d4a2562b194e489dcf3feea"
     license: "Sarvam AI Research License (non-commercial-flavored)"
   - name: "google/gemma-2-2b"
-    commit_sha: "<fill after HF check>"
+    commit_sha: "c5ebcd40d208330abc697524c919956e692655cf"
     license: "Gemma Terms of Use"
+    status: "not attempted -- A/B abandoned under GPU/time pressure, never trained or evaluated"
 
 chosen:
-  base_model: "<fill at M3 step 12, after A/B>"
-  base_commit_sha: "<fill at M3 step 12>"
+  base_model: "sarvamai/sarvam-1"
+  base_commit_sha: "e9607337286ddf496d4a2562b194e489dcf3feea"
 
 wandb:
   entity: "shreshthabagohil-personal"
   project: "fasal"
-  run_name_prefix: "iter"   # e.g. iter-0-sarvam, iter-0-gemma
+  run_name_prefix: "iter"   # e.g. iter-0-sarvam
