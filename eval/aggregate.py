@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -111,6 +112,13 @@ def read_metadata():
 
 
 def build_report(rows, dropped, bootstrap_n, seed):
+    if not rows:
+        raise ValueError(
+            "no scoreable rows: eval/out/scores.jsonl produced 0 usable rows "
+            "(everything errored or the file is empty) -- refusing to write a "
+            "report that would divide by zero / report a fake overall score"
+        )
+
     overall_boot = bootstrap_result(
         rows,
         n_bootstrap=bootstrap_n,
@@ -218,6 +226,16 @@ def main():
 
     args = parser.parse_args()
 
+    # NOTE (fixed 2026-08-12): this used to catch every exception, print it,
+    # and `return 0` (success) regardless -- so a missing eval/heldout/HASHES.md,
+    # an empty/all-errored scores.jsonl (ZeroDivisionError in mean_base/mean_ours),
+    # or any other mid-pipeline failure was silently swallowed. eval/run_eval.sh
+    # runs under `set -euo pipefail`, so that exit-0 made the whole pipeline look
+    # green even when eval_report.json was stale, missing, or never written --
+    # exactly the "silent failure hides a real problem" bug class already fixed
+    # elsewhere this session (build_gold_and_heldout.py, data/tests.py). Errors
+    # now go to stderr and the process exits 1, so a broken report build fails
+    # loudly instead of quietly.
     try:
         rows, dropped = load_scores(args.scores)
 
@@ -273,8 +291,8 @@ def main():
             )
 
     except Exception as exc:
-        print(f"aggregate error: {exc}")
-        return 0
+        print(f"aggregate error: {exc}", file=sys.stderr)
+        return 1
 
     return 0
 
