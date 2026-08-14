@@ -1,21 +1,14 @@
-"""Fasal advisor demo -- pure Gradio chat UI, deployed as an HF Space (Gradio SDK).
+"""Fasal advisor demo -- pure Gradio chat UI, deployed as an HF Space (Gradio SDK,
+ZeroGPU hardware -- free tier, GPU allocated on demand per request).
 
 Loads the base model (sarvamai/sarvam-1, pinned SHA per train/A0_LOCKED.md) with the
 published Fasal LoRA adapter (Algo-Nova/fasal-sarvam1-lora) applied on top, and serves
 a simple multilingual farmer-advisory chat interface.
 
-Zero-budget note: this targets HF Spaces' free CPU Basic tier (2 vCPU / 16GB RAM, no
-GPU). bitsandbytes 4-bit quantization is CUDA-only (see requirements.txt in the main
-repo), so on CPU we load in bfloat16 instead -- roughly half the memory of float32 for
-a ~2.5B-param model, and CPU inference in bf16 is supported by recent PyTorch. This
-keeps the demo well inside the 16GB budget but generation will be slow (tens of
-seconds per reply) -- max_new_tokens is capped low specifically to keep that from
-becoming a multi-minute wait. If the Space is later upgraded to a paid GPU tier, set
-DEVICE_OVERRIDE=cuda and the 4-bit bitsandbytes path can be re-enabled (see
-_load_model() below) for much faster generation.
-
-Uses the Gradio SDK (not Docker) so the Space stays on HF's free CPU Basic tier --
-Docker Spaces require a paid plan, Gradio SDK Spaces do not.
+ZeroGPU note: this Space uses HF's free ZeroGPU hardware. ZeroGPU only attaches a
+real GPU for the duration of a function decorated with @spaces.GPU -- outside that
+function torch.cuda.is_available() is False. So model load + generation both happen
+inside respond(), which is decorated below; that's the only place CUDA is visible.
 
 Env vars (all optional, sensible defaults for the published model):
     BASE_MODEL       default: sarvamai/sarvam-1
@@ -29,6 +22,7 @@ import threading
 import time
 
 import gradio as gr
+import spaces
 import torch
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -60,8 +54,6 @@ def _pick_device_and_dtype():
         device = override
     else:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    # bf16 halves memory vs fp32 and is supported for CPU inference in recent
-    # PyTorch; fall back to fp32 if something on this box doesn't support it.
     dtype = torch.bfloat16
     return device, dtype
 
@@ -96,6 +88,7 @@ def _load_model():
             print(f"[fasal-demo] MODEL LOAD FAILED: {exc}", flush=True)
 
 
+@spaces.GPU
 def respond(message, history):
     if _model is None and _load_error is None:
         _load_model()
@@ -109,8 +102,6 @@ def respond(message, history):
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for turn in history:
-        # Gradio ChatInterface history is a list of {"role", "content"} dicts
-        # (type="messages" format) or legacy (user, assistant) tuples -- handle both.
         if isinstance(turn, dict):
             messages.append(turn)
         else:
@@ -150,8 +141,8 @@ DESCRIPTION = (
     f"`{BASE_MODEL}` on real Kisan Call Centre queries across 8 Indian languages. "
     "Ask a farming question in Hindi, Gujarati, Marathi, Tamil, Bengali, Kannada, "
     "Punjabi, or English.\n\n"
-    "*Running on a free CPU Space -- first reply after startup can take a minute "
-    "while the model loads; each reply after that takes tens of seconds.*"
+    "*Running on free ZeroGPU hardware -- first reply after startup can take a "
+    "minute or two while the model loads and a GPU is allocated.*"
 )
 
 chat = gr.ChatInterface(
