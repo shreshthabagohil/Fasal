@@ -9,10 +9,11 @@
 # pick a huggingface_hub that crashes the Space at import time with
 # "ImportError: cannot import name 'HfFolder'". Verified empirically in a
 # clean venv 2026-08-12.
+#
+# No fastapi/uvicorn here -- this Space uses the Gradio SDK (chat.launch()),
+# not a custom FastAPI/Docker server, so those aren't needed.
 huggingface-hub==0.25.2
 gradio==4.44.1
-fastapi==0.115.0
-uvicorn==0.30.6
 transformers==4.43.3
 peft==0.12.0
 torch==2.3.1
