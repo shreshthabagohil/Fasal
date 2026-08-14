@@ -1,4 +1,4 @@
-"""Fasal advisor demo — Gradio chat UI + FastAPI wrapper, deployed as an HF Space.
+"""Fasal advisor demo -- pure Gradio chat UI, deployed as an HF Space (Gradio SDK).
 
 Loads the base model (sarvamai/sarvam-1, pinned SHA per train/A0_LOCKED.md) with the
 published Fasal LoRA adapter (Algo-Nova/fasal-sarvam1-lora) applied on top, and serves
@@ -14,6 +14,9 @@ becoming a multi-minute wait. If the Space is later upgraded to a paid GPU tier,
 DEVICE_OVERRIDE=cuda and the 4-bit bitsandbytes path can be re-enabled (see
 _load_model() below) for much faster generation.
 
+Uses the Gradio SDK (not Docker) so the Space stays on HF's free CPU Basic tier --
+Docker Spaces require a paid plan, Gradio SDK Spaces do not.
+
 Env vars (all optional, sensible defaults for the published model):
     BASE_MODEL       default: sarvamai/sarvam-1
     BASE_SHA         default: e9607337286ddf496d4a2562b194e489dcf3feea
@@ -27,7 +30,6 @@ import time
 
 import gradio as gr
 import torch
-from fastapi import FastAPI
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -44,8 +46,8 @@ SYSTEM_PROMPT = (
     "than guessing -- an unsafe or wrong dose recommendation is worse than no answer."
 )
 
-# Loaded lazily on first request (not at import time) so the Space's health check
-# responds immediately instead of blocking on a multi-GB model download + load.
+# Loaded lazily on first request (not at import time) so the Space comes up
+# immediately instead of blocking startup on a multi-GB model download + load.
 _model = None
 _tokenizer = None
 _load_lock = threading.Lock()
@@ -144,18 +146,18 @@ def respond(message, history):
 
 
 DESCRIPTION = (
-    "**Fasal** — a multilingual farmer-advisory model, QLoRA fine-tuned from "
+    "**Fasal** -- a multilingual farmer-advisory model, QLoRA fine-tuned from "
     f"`{BASE_MODEL}` on real Kisan Call Centre queries across 8 Indian languages. "
     "Ask a farming question in Hindi, Gujarati, Marathi, Tamil, Bengali, Kannada, "
     "Punjabi, or English.\n\n"
-    "*Running on a free CPU Space — first reply after startup can take a minute "
+    "*Running on a free CPU Space -- first reply after startup can take a minute "
     "while the model loads; each reply after that takes tens of seconds.*"
 )
 
 chat = gr.ChatInterface(
     fn=respond,
     type="messages",
-    title="Fasal — Multilingual Farmer Advisor",
+    title="Fasal -- Multilingual Farmer Advisor",
     description=DESCRIPTION,
     examples=[
         "मिर्च की बुवाई का सही समय क्या है?",
@@ -164,25 +166,5 @@ chat = gr.ChatInterface(
     ],
 )
 
-app = FastAPI()
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "loading" if _model is None and _load_error is None else (
-            "error" if _load_error else "ready"
-        ),
-        "base_model": BASE_MODEL,
-        "base_sha": BASE_SHA,
-        "adapter_repo": ADAPTER_REPO,
-        "error": _load_error,
-    }
-
-
-app = gr.mount_gradio_app(app, chat, path="/")
-
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")))
+    chat.launch()
