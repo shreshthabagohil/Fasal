@@ -3,7 +3,8 @@ title: Fasal Advisor
 emoji: 🌾
 colorFrom: green
 colorTo: yellow
-sdk: docker
+sdk: gradio
+sdk_version: 4.44.1
 app_file: app.py
 pinned: false
 license: other
@@ -28,16 +29,15 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open http://localhost:7860.
+Then open the local URL Gradio prints (defaults to http://localhost:7860).
 
 ## Notes
 
-- Runs on HF Spaces' free CPU Basic tier by default (bfloat16 weights, no GPU
-  quantization -- see `app.py` for why). First reply after a cold start takes
-  roughly a minute while the ~2.5B-param model loads; each reply after that takes
-  tens of seconds. This is a deliberate zero-budget tradeoff, not a bug.
-- `GET /health` reports load status (`loading` / `ready` / `error`) if the Space
-  seems stuck.
+- Runs on HF Spaces' free CPU Basic tier via the **Gradio SDK** (not Docker --
+  Docker Spaces require a paid plan, Gradio SDK Spaces don't). Weights load in
+  bfloat16, no GPU quantization -- see `app.py` for why. First reply after a cold
+  start takes roughly a minute while the ~2.5B-param model loads; each reply after
+  that takes tens of seconds. This is a deliberate zero-budget tradeoff, not a bug.
 - License: this demo serves a model derived from `sarvamai/sarvam-1`, which ships
   under the Sarvam AI Research License (non-commercial-flavored). See
   `LICENSE_BASE_SARVAM.md` in the main repo for the full text.
