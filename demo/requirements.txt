@@ -1,6 +1,11 @@
 # HF Space deps -- separate from the main repo's requirements.txt, this is what
 # the Space container installs. Pinned for reproducibility, same discipline as
-# the main repo (see ../requirements.txt).
+# the main repo.
+#
+# spaces: required for the @spaces.GPU decorator on ZeroGPU hardware -- without
+# it (or without any @spaces.GPU-decorated function), the Space refuses to start
+# with "No @spaces.GPU function detected during startup". Usually preinstalled
+# on ZeroGPU Space images, but pinned here explicitly to not depend on that.
 #
 # huggingface-hub is pinned explicitly, not left to gradio's own resolution:
 # gradio==4.44.1 imports `HfFolder` from huggingface_hub at startup, which was
@@ -10,12 +15,14 @@
 # "ImportError: cannot import name 'HfFolder'". Verified empirically in a
 # clean venv 2026-08-12.
 #
-# No fastapi/uvicorn here -- this Space uses the Gradio SDK (chat.launch()),
-# not a custom FastAPI/Docker server, so those aren't needed.
+# torch is pinned to 2.8.0, not the main repo's 2.3.1 -- this Space runs on
+# ZeroGPU hardware, which only supports torch 2.11.0/2.10.0/2.9.1/2.8.0
+# (enforced by HF at build time). 2.3.1 fails the Space's Configuration check.
+spaces
 huggingface-hub==0.25.2
 gradio==4.44.1
 transformers==4.43.3
 peft==0.12.0
-torch==2.3.1
+torch==2.8.0
 accelerate==0.33.0
 sentencepiece==0.2.0
