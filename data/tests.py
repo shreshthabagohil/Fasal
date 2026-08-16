@@ -9,8 +9,10 @@ import argparse
 import json
 import sys
 
-sys.path.insert(0, "src")
-from clean_kcc import normalize, contains_pii  # reuse the same logic
+sys.path.insert(0, "data")  # clean_kcc.py lives here, not src/ (src/ only has seed.py) —
+from clean_kcc import normalize, contains_pii  # corrected 2026-08-12; harmless before this
+# fix only because Python auto-prepends the running script's own directory (data/) to
+# sys.path, which happened to resolve the import anyway. Fixed for clarity, not behavior.
 
 ALLOWED_LANGS = {"hi", "gu", "mr", "ta", "bn", "kn", "pa", "en", "mixed", "unknown"}
 MIN_LANG_VOLUME = 200  # tune at M1; below this a language is dropped + documented
@@ -34,6 +36,37 @@ def t_leakage(rows, heldout):
     test_q = {normalize(r["instruction"]) for r in heldout}
     overlap = train_q & test_q
     return (len(overlap) == 0, f"{len(overlap)} train/test overlaps (MUST be 0)")
+
+
+def t_leakage_cross_lingual(rows, heldout):
+    """D2b — catches what D2 structurally cannot: 7 of 8 languages here are
+    machine translations of the same English KCC source (see
+    translate_to_indic.py), so the SAME underlying question can appear in
+    train under one language's surface text and in held-out under another's
+    — zero string overlap, but still the same example the model was trained
+    on. meta.orig_instruction_en is the shared identity key that survives
+    translation; D2 (above) only ever compares each row's own surface text,
+    which is different per language by construction and can never catch
+    this. Found for real 2026-08-12: 17 held-out rows leaked this way
+    despite D2 and the D3 embedding audit both reporting clean — D3 uses a
+    multilingual embedder (BGE-M3) but same-language paraphrases reliably
+    score higher cosine similarity than genuine cross-lingual translations
+    of identical meaning (the well-documented "language gap" in multilingual
+    embedding spaces), so real translated duplicates can sit below D3's
+    0.9 threshold precisely because they ARE cross-lingual. Full audit:
+    eval/heldout/LEAKAGE_AUDIT.md.
+    """
+    if not heldout:
+        return (True, "SKIP (no held-out set provided yet)")
+
+    def source_key(r):
+        src_text = (r.get("meta") or {}).get("orig_instruction_en") or r["instruction"]
+        return normalize(src_text)
+
+    train_src = {source_key(r) for r in rows}
+    test_src = {source_key(r) for r in heldout}
+    overlap = train_src & test_src
+    return (len(overlap) == 0, f"{len(overlap)} train/test cross-lingual source overlaps (MUST be 0)")
 
 
 def t_dedup(rows):
@@ -72,6 +105,7 @@ def main():
     checks = [
         ("D1 schema", t_schema(rows)),
         ("D2 leakage=0", t_leakage(rows, heldout)),
+        ("D2b cross-lingual leakage=0", t_leakage_cross_lingual(rows, heldout)),
         ("D4 dedup", t_dedup(rows)),
         ("D5 PII", t_pii(rows)),
         ("D6 coverage", t_coverage(rows)),
