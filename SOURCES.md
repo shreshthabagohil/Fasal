@@ -8,5 +8,5 @@
 - Kaggle mirror (if used): https://www.kaggle.com/datasets/daskoushik/farmers-call-query-data-qa (cite data.gov.in original if licences differ)
 
 ## Base model
-- Model + HF commit SHA: ____
-- Licence + any pass-through terms: ____
+- Model + HF commit SHA: `sarvamai/sarvam-1` @ `e9607337286ddf496d4a2562b194e489dcf3feea`
+- Licence + any pass-through terms: Sarvam AI Research License (non-commercial-flavored) — flows through to the released LoRA adapter; we release adapter-only, not merged weights, per train/A0_LOCKED.md.

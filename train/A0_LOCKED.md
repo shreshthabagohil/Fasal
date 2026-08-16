@@ -18,7 +18,7 @@ These four namespaces look alike but are DIFFERENT and were confused in early dr
 ## Base model
 - A/B two at M3: `sarvamai/sarvam-1` vs `google/gemma-2-2b`. Keep the winner (highest 95% CI lower bound on iter-0 delta).
 - Pin the exact HF commit SHA of whichever base wins. Never load a floating tag.
-- `LOCKED: <base>@<sha>` — filled at M3 step 12.
+- `LOCKED: sarvamai/sarvam-1@e9607337286ddf496d4a2562b194e489dcf3feea` — Gemma-2-2B A/B never ran (cut for time under the submission deadline); Sarvam-1 shipped as the single trained base. Documented deviation, not a hidden shortcut.
 
 ## Fine-tune method
 - QLoRA SFT · 4-bit NF4 base · LoRA `r=16, alpha=32, dropout=0.05, target_modules="all-linear", bias="none"`.

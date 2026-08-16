@@ -1,0 +1,38 @@
+# HF Space deps -- separate from the main repo's requirements.txt, this is what
+# the Space container installs. Pinned for reproducibility, same discipline as
+# the main repo.
+#
+# starlette is pinned explicitly: starlette 1.0 changed the internal
+# TemplateResponse(name, context) call signature, which gradio==4.44.1 doesn't
+# know about -- Jinja2's template cache then tries to use a context dict as a
+# cache key and raises "TypeError: unhashable type: 'dict'" on every page load.
+# Verified fixed by pinning starlette<1.0. (jinja2==3.1.4 was tried first based
+# on an unrelated known regression report -- it did NOT fix this; root cause
+# was starlette, not jinja2. Left pinned anyway since it's still a valid pin.)
+#
+# spaces: required for the @spaces.GPU decorator on ZeroGPU hardware -- without
+# it (or without any @spaces.GPU-decorated function), the Space refuses to start
+# with "No @spaces.GPU function detected during startup". Usually preinstalled
+# on ZeroGPU Space images, but pinned here explicitly to not depend on that.
+#
+# huggingface-hub is pinned explicitly, not left to gradio's own resolution:
+# gradio==4.44.1 imports `HfFolder` from huggingface_hub at startup, which was
+# removed in huggingface_hub>=0.26. pip's resolver doesn't reject that combo
+# (gradio's own upper bound is too loose), so an unpinned install can silently
+# pick a huggingface_hub that crashes the Space at import time with
+# "ImportError: cannot import name 'HfFolder'". Verified empirically in a
+# clean venv 2026-08-12.
+#
+# torch is pinned to 2.8.0, not the main repo's 2.3.1 -- this Space runs on
+# ZeroGPU hardware, which only supports torch 2.11.0/2.10.0/2.9.1/2.8.0
+# (enforced by HF at build time). 2.3.1 fails the Space's Configuration check.
+spaces
+jinja2==3.1.4
+starlette<1.0
+huggingface-hub==0.25.2
+gradio==4.44.1
+transformers==4.43.3
+peft
+torch==2.8.0
+accelerate==0.34.2
+sentencepiece==0.2.0

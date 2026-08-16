@@ -39,15 +39,15 @@ training:
 # Base A/B candidates (M3) — fill "chosen" once the winner is picked.
 base_candidates:
   - name: "sarvamai/sarvam-1"
-    commit_sha: "<fill after HF check>"
+    commit_sha: "e9607337286ddf496d4a2562b194e489dcf3feea"  # resolved 2026-08-10 on Kaggle T4, iter-0-sarvam run
     license: "Sarvam AI Research License (non-commercial-flavored)"
   - name: "google/gemma-2-2b"
-    commit_sha: "<fill after HF check>"
+    commit_sha: "c5ebcd40d208330abc697524c919956e692655cf"  # resolved 2026-08-10 on Kaggle T4, iter-0-gemma run
     license: "Gemma Terms of Use"
 
 chosen:
-  base_model: "<fill at M3 step 12, after A/B>"
-  base_commit_sha: "<fill at M3 step 12>"
+  base_model: "sarvamai/sarvam-1"
+  base_commit_sha: "e9607337286ddf496d4a2562b194e489dcf3feea"  # locked 2026-08-10; Gemma-2-2B A/B never ran (cut for time), see train/A0_LOCKED.md
 
 wandb:
   entity: "shreshthabagohil-personal"
