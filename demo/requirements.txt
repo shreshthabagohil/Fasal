@@ -2,10 +2,13 @@
 # the Space container installs. Pinned for reproducibility, same discipline as
 # the main repo.
 #
-# jinja2 is pinned explicitly: unpinned jinja2>=3.1.5 combined with this
-# starlette/gradio version raises "TypeError: unhashable type: 'dict'" inside
-# starlette's TemplateResponse caching (self.cache.get(cache_key)) on every
-# page load -- a known regression. Verified fixed by pinning jinja2==3.1.4.
+# starlette is pinned explicitly: starlette 1.0 changed the internal
+# TemplateResponse(name, context) call signature, which gradio==4.44.1 doesn't
+# know about -- Jinja2's template cache then tries to use a context dict as a
+# cache key and raises "TypeError: unhashable type: 'dict'" on every page load.
+# Verified fixed by pinning starlette<1.0. (jinja2==3.1.4 was tried first based
+# on an unrelated known regression report -- it did NOT fix this; root cause
+# was starlette, not jinja2. Left pinned anyway since it's still a valid pin.)
 #
 # spaces: required for the @spaces.GPU decorator on ZeroGPU hardware -- without
 # it (or without any @spaces.GPU-decorated function), the Space refuses to start
@@ -25,10 +28,11 @@
 # (enforced by HF at build time). 2.3.1 fails the Space's Configuration check.
 spaces
 jinja2==3.1.4
+starlette<1.0
 huggingface-hub==0.25.2
 gradio==4.44.1
 transformers==4.43.3
-peft==0.12.0
+peft
 torch==2.8.0
-accelerate==0.33.0
+accelerate==0.34.2
 sentencepiece==0.2.0

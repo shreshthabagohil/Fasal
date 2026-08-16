@@ -17,4 +17,4 @@ export ADAPTER_REPO="${ADAPTER_REPO:-Algo-Nova/fasal-sarvam1-lora}"
 
 # 3) run eval, print the number
 bash eval/run_eval.sh
-echo "Expected headline: +__._% win-rate over ${BASE_MODEL} (see model_card/MODEL_CARD.md)"
+echo "Expected headline: win-rate over ${BASE_MODEL} -- see model_card/MODEL_CARD.md for the current number"
