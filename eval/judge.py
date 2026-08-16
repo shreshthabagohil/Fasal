@@ -12,7 +12,30 @@ import requests
 
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
 DEFAULT_MODEL = "llama-3.3-70b-versatile"
+
+# 2026-08-16: N=1,226 dual-order (2,452 calls, ~4.17M tokens) does not fit
+# inside Groq's free-tier daily budget even pooled across 7 keys (7 x
+# 100,000 TPD = 700,000 TPD) -- confirmed empirically, run died at 55/1226
+# scored after a 7h wall-clock loop that mostly retried against exhausted
+# keys. Cerebras Cloud's free tier gives 1,000,000 tokens/day + 14,400
+# requests/day PER KEY on the same llama-3.3-70b model (OpenAI-compatible
+# endpoint, no card required) -- ~10x the per-key budget of Groq. Pooling
+# a few free Cerebras keys alongside the existing Groq keys is what makes
+# the full N=1,226 run actually finish. See PROVIDERS / MODEL_BY_PROVIDER
+# below -- this is a second *provider*, not just a second key.
+PROVIDERS = {
+    "groq": GROQ_URL,
+    "cerebras": CEREBRAS_URL,
+}
+MODEL_BY_PROVIDER = {
+    "groq": DEFAULT_MODEL,
+    # Cerebras' model id for the same Llama-3.3-70B weights. Verify this
+    # against https://inference-docs.cerebras.ai/ before a long run --
+    # provider model ids drift independently of Groq's.
+    "cerebras": "llama-3.3-70b",
+}
 DEFAULT_TEMPERATURE = 0
 DEFAULT_SEED = 1729
 DEFAULT_MAX_RETRIES = 5
@@ -39,7 +62,43 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--sleep-on-429", type=float, default=DEFAULT_SLEEP_ON_429)
     parser.add_argument("--qps", type=float, default=DEFAULT_QPS)
+    parser.add_argument(
+        "--resume",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "If --out already exists, keep every row that scored cleanly "
+            "(no 'error' key) and only re-run the ids that are missing or "
+            "previously errored. Lets a run interrupted by a rate-limit "
+            "storm continue instead of re-spending budget on already-scored "
+            "items."
+        ),
+    )
     return parser.parse_args()
+
+
+def load_scores_lenient(path: str) -> Tuple[List[Dict[str, Any]], int]:
+    """Reads a previously-written --out file for --resume. Lenient by
+    design: a truncated/half-written last line (e.g. the process was
+    killed mid-write) is skipped rather than raising, since the whole
+    point of --resume is recovering from an interrupted prior run."""
+    rows: List[Dict[str, Any]] = []
+    skipped = 0
+
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    skipped += 1
+    except FileNotFoundError:
+        return [], 0
+
+    return rows, skipped
 
 
 def load_jsonl(path: str) -> List[Dict[str, Any]]:
@@ -183,37 +242,56 @@ def _parse_judge_json_impl(content: str) -> Dict[str, Any]:
 
 
 class KeyPool:
-    """Round-robins across multiple Groq API keys so one key hitting its
+    """Round-robins across multiple API keys -- possibly from more than one
+    provider (Groq, Cerebras, ...) -- so one key/provider hitting its
     rate/daily limit doesn't stop the whole eval run. When a key gets a
     429, it is put in cooldown and skipped until every other key has
     also been tried once (then cooldown resets so a key that recovered
-    can be reused)."""
+    can be reused).
 
-    def __init__(self, keys: List[str]):
-        if not keys:
-            raise ValueError("KeyPool needs at least one API key")
-        self._keys = keys
+    Each entry is a (provider, key) pair, e.g. ("groq", "gsk_...") or
+    ("cerebras", "csk_..."). Mixing providers in one pool is what lets the
+    daily token budget scale past what a single provider's free tier
+    allows -- see the PROVIDERS/MODEL_BY_PROVIDER note above judge.py's
+    constants.
+    """
+
+    def __init__(self, entries: List[Tuple[str, str]]):
+        if not entries:
+            raise ValueError("KeyPool needs at least one (provider, key) entry")
+        for provider, _ in entries:
+            if provider not in PROVIDERS:
+                raise ValueError(
+                    f"unknown provider {provider!r}; expected one of {sorted(PROVIDERS)}"
+                )
+        self._entries = entries
         self._index = 0
         self._cooldown: Set[int] = set()
 
-    def get(self) -> str:
-        if len(self._cooldown) >= len(self._keys):
+    def get(self) -> Tuple[str, str]:
+        if len(self._cooldown) >= len(self._entries):
             self._cooldown.clear()
-        for _ in range(len(self._keys)):
+        for _ in range(len(self._entries)):
             idx = self._index
-            key = self._keys[idx]
-            self._index = (self._index + 1) % len(self._keys)
+            entry = self._entries[idx]
+            self._index = (self._index + 1) % len(self._entries)
             if idx not in self._cooldown:
-                return key
+                return entry
         # Should not happen given the clear() above, but stay safe.
-        return self._keys[0]
+        return self._entries[0]
 
-    def mark_limited(self, key: str) -> None:
-        if key in self._keys:
-            self._cooldown.add(self._keys.index(key))
+    def mark_limited(self, entry: Tuple[str, str]) -> None:
+        if entry in self._entries:
+            self._cooldown.add(self._entries.index(entry))
 
     def __len__(self) -> int:
-        return len(self._keys)
+        return len(self._entries)
+
+    def provider_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for provider, _ in self._entries:
+            counts[provider] = counts.get(provider, 0) + 1
+        return counts
 
 
 def request_judge(
@@ -225,30 +303,34 @@ def request_judge(
     user_message: str,
     max_retries: int,
     sleep_on_429: float,
+    model_override: bool,
 ) -> Dict[str, Any]:
-    payload = {
-        "model": model,
-        "temperature": temperature,
-        "seed": seed,
-        "messages": [
-            {
-                "role": "user",
-                "content": user_message,
-            }
-        ],
-    }
-
     last_error: Exception | None = None
 
     for attempt in range(max_retries + 1):
-        api_key = key_pool.get()
+        provider, api_key = key_pool.get()
+        url = PROVIDERS[provider]
+        effective_model = model if model_override else MODEL_BY_PROVIDER[provider]
+
+        payload = {
+            "model": effective_model,
+            "temperature": temperature,
+            "seed": seed,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": user_message,
+                }
+            ],
+        }
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         try:
             response = session.post(
-                GROQ_URL,
+                url,
                 headers=headers,
                 json=payload,
                 timeout=120,
@@ -258,9 +340,10 @@ def request_judge(
 
             if status == 429:
                 # This key is rate/daily limited -- try a different key
-                # on the very next attempt instead of just sleeping on
-                # the same exhausted key.
-                key_pool.mark_limited(api_key)
+                # (possibly a different provider entirely) on the very
+                # next attempt instead of just sleeping on the same
+                # exhausted key.
+                key_pool.mark_limited((provider, api_key))
 
                 if attempt >= max_retries:
                     response.raise_for_status()
@@ -384,25 +467,44 @@ def validate_id_sets(
         )
 
 
+def load_provider_keys(env_var: str, provider: str) -> List[Tuple[str, str]]:
+    raw = os.environ.get(env_var)
+    if not raw:
+        return []
+    return [(provider, k.strip()) for k in raw.split(",") if k.strip()]
+
+
 def main() -> int:
     args = parse_args()
 
-    raw_keys = os.environ.get("GROQ_API_KEYS") or os.environ.get("GROQ_API_KEY")
-    if not raw_keys:
+    # Pool keys across BOTH providers -- see the 2026-08-16 note above
+    # PROVIDERS: Groq alone (7 keys x 100K TPD = 700K TPD) can't cover a
+    # full N=1,226 dual-order run (~4.17M tokens) in one day. Cerebras
+    # free tier (1M TPD/key) closes that gap. Either provider alone still
+    # works with just its own env var set.
+    entries: List[Tuple[str, str]] = []
+    entries += load_provider_keys("GROQ_API_KEYS", "groq")
+    entries += load_provider_keys("GROQ_API_KEY", "groq")
+    entries += load_provider_keys("CEREBRAS_API_KEYS", "cerebras")
+    entries += load_provider_keys("CEREBRAS_API_KEY", "cerebras")
+
+    if not entries:
         print(
-            "ERROR: set GROQ_API_KEYS (comma-separated, e.g. "
-            "'gsk_key1,gsk_key2,gsk_key3') or, for a single key, GROQ_API_KEY.",
+            "ERROR: set GROQ_API_KEYS and/or CEREBRAS_API_KEYS "
+            "(comma-separated keys), or the singular *_API_KEY form for one key.",
             file=sys.stderr,
         )
         return 2
 
-    keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
-    if not keys:
-        print("ERROR: GROQ_API_KEYS/GROQ_API_KEY is empty.", file=sys.stderr)
-        return 2
+    key_pool = KeyPool(entries)
+    counts = key_pool.provider_counts()
+    print(
+        f"judge.py: using {len(key_pool)} key(s) in rotation "
+        f"({', '.join(f'{p}={n}' for p, n in sorted(counts.items()))}).",
+        flush=True,
+    )
 
-    key_pool = KeyPool(keys)
-    print(f"judge.py: using {len(key_pool)} Groq key(s) in rotation.", flush=True)
+    model_override = args.model != DEFAULT_MODEL
 
     if args.qps <= 0:
         print("ERROR: --qps must be greater than zero.", file=sys.stderr)
@@ -437,13 +539,53 @@ def main() -> int:
     wins_base = 0
     wins_ours = 0
 
+    # --resume: keep every row from a prior run that scored cleanly (no
+    # "error" key) and only re-process the ids that are missing or
+    # previously errored. Without this, a rate-limit storm that killed a
+    # 7-hour run means re-spending the same budget on the same items.
+    keep_rows: List[Dict[str, Any]] = []
+    done_ids: Set[str] = set()
+
+    if args.resume and Path(args.out).exists():
+        existing_rows, _dropped = load_scores_lenient(args.out)
+        for row in existing_rows:
+            if "error" not in row and row.get("id") in heldout:
+                keep_rows.append(row)
+                done_ids.add(row["id"])
+
+        print(
+            f"judge.py: --resume found {len(keep_rows)} already-scored id(s) "
+            f"in {args.out}; {len(ids) - len(keep_rows)} remaining.",
+            flush=True,
+        )
+
+    ids_to_process = [i for i in ids if i not in done_ids]
+
     with open(args.out, "w", encoding="utf-8") as output_handle:
-        for row_id in ids:
+        for row in keep_rows:
+            output_handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+            completed += 1
+            total_score_base += float(row["score_base"])
+            total_score_ours += float(row["score_ours"])
+
+            if row.get("choice_final") == "base":
+                wins_base += 1
+            elif row.get("choice_final") == "ours":
+                wins_ours += 1
+
+        output_handle.flush()
+
+        for row_id in ids_to_process:
             master = heldout[row_id]
             base_row = base[row_id]
             ours_row = ours[row_id]
 
-            question = str(master.get("question", ""))
+            # NOTE 2026-08-10: heldout rows use "instruction", not "question"
+            # (verified against eval/heldout/test.jsonl schema). The old
+            # "question" lookup silently fell back to "" for every row,
+            # which would have sent the judge blank questions.
+            question = str(master.get("instruction", ""))
             context = str(master.get("input", ""))
 
             base_answer = base_row.get("answer")
@@ -479,6 +621,7 @@ def main() -> int:
                     user_message=user_message_1,
                     max_retries=args.max_retries,
                     sleep_on_429=args.sleep_on_429,
+                    model_override=model_override,
                 )
                 previous_call_time = time.monotonic()
 
@@ -508,6 +651,7 @@ def main() -> int:
                         user_message=user_message_2,
                         max_retries=args.max_retries,
                         sleep_on_429=args.sleep_on_429,
+                        model_override=model_override,
                     )
                     previous_call_time = time.monotonic()
 

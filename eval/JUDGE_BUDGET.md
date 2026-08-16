@@ -61,3 +61,31 @@ N=170 (not the full 1,226-row held-out) is used for the headline significance
 claim, due to the hackathon's compute/time deadline, not a hidden design
 choice. The full 1,226-row set stays frozen and available for anyone to
 re-run post-event if they want the fully-powered number.
+
+## Addendum 2026-08-16 — post-submission full-N attempt, multi-provider pool
+
+With the submission deadline passed, attempted the full N=1,226 dual-order
+report for the portfolio version of this project. First attempt used the
+Groq-only 7-key pool from above and failed: N=1,226 dual-order needs
+~4.17M tokens (2,452 calls x ~1,700 tokens), but 7 Groq keys only provide
+7 x 100,000 = 700,000 TPD — about 6x short. The run burned a full 7-hour
+Kaggle GPU session mostly retrying against exhausted keys and only scored
+55/1,226 items before the notebook finished (no crash, just no data).
+
+Fix: `judge.py` now pools keys across **two** free-tier providers instead
+of one — Groq (`llama-3.3-70b-versatile`, 100K TPD/key) AND Cerebras Cloud
+(`llama-3.3-70b`, 1,000,000 TPD/key + 14,400 RPD/key, OpenAI-compatible
+endpoint, no card required). One Cerebras key alone is ~10x a single Groq
+key's daily budget. Set `CEREBRAS_API_KEYS` (comma-separated, same pattern
+as `GROQ_API_KEYS`) alongside the existing Groq keys; `judge.py` rotates
+across the combined pool automatically. `--resume` was also added so a run
+interrupted by a rate-limit storm can continue from the last
+cleanly-scored item instead of re-spending budget on rows already done.
+
+Mixing two providers for the same nominal model is a real, disclosed
+tradeoff: Groq and Cerebras may not be bit-identical deployments of
+Llama-3.3-70B even at temperature 0, so which provider judged a given
+item is a (small, undocumented-magnitude) source of noise not present in
+a single-provider run. Worth a sentence in the model card's limitations
+section rather than treating the combined-provider number as identical
+in rigor to a single-provider one.
