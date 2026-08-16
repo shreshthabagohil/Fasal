@@ -40,7 +40,8 @@ Then open the local URL Gradio prints (defaults to http://localhost:7860).
   roughly a minute while the ~2.5B-param model loads; each reply after that takes
   tens of seconds on CPU. This is a deliberate zero-budget tradeoff, not a bug.
 - License: this demo serves a model derived from `sarvamai/sarvam-1`, which ships
-  under the Sarvam AI Research License (non-commercial-flavored).
+  under the Sarvam AI Research License (non-commercial-flavored). See
+  `LICENSE_BASE_SARVAM.md` in the main repo for the full text.
 - This folder mirrors what's actually deployed on the live Space — see `app.py`'s
   header comment and `requirements.txt`'s inline comments for the real dependency
   gotchas hit while deploying (starlette/jinja2 template-cache bug, huggingface_hub

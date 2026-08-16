@@ -72,18 +72,32 @@ def main():
     # question asked in different districts with different answers). D2
     # leakage is defined on instruction text alone (see tests.py t_leakage),
     # so splitting individual ROWS can put the same question in both train
-    # and held-out even though no single row is duplicated. Grouping by
-    # normalized instruction PER LANGUAGE fixed most of this, but a handful
-    # of instruction strings show up under more than one language tag (e.g.
-    # short/generic text landing in "unknown"/"mixed" as well as "en") — so
-    # the group key must be tracked GLOBALLY, not reset per language, or
-    # those cross-language duplicates can still be split across sets.
-    global_assignment = {}  # normalize(instruction) -> "gold"/"heldout"/"reserve"/"train"
+    # and held-out even though no single row is duplicated.
+    #
+    # CROSS-LINGUAL FIX (2026-08-12): 7 of 8 languages here are machine
+    # translations of the same English KCC source (see translate_to_indic.py)
+    # — meta.orig_instruction_en carries the shared source text. The original
+    # version of this script grouped/tracked assignment by normalize(the
+    # row's OWN instruction text), which differs per language by
+    # construction, so a Hindi translation and a Bengali translation of the
+    # exact same source question hashed to different keys and could be
+    # (and were — see eval/heldout/LEAKAGE_AUDIT.md, 17 rows) independently
+    # assigned to different splits. source_key() below resolves every
+    # translation of the same source record — and the English original
+    # itself — to the SAME key, so the existing global_assignment mechanism
+    # (which was already correctly designed, just fed the wrong key) now
+    # actually enforces one split per underlying question, across ALL
+    # languages, not just within one.
+    def source_key(r):
+        src_text = (r.get("meta") or {}).get("orig_instruction_en") or r["instruction"]
+        return normalize(src_text)
+
+    global_assignment = {}  # source_key(row) -> "gold"/"heldout"/"reserve"/"train"
 
     for lang, lrows in sorted(by_lang.items()):
         groups = collections.defaultdict(list)
         for r in lrows:
-            groups[normalize(r["instruction"])].append(r)
+            groups[source_key(r)].append(r)
         group_items = list(groups.items())
         rng.shuffle(group_items)
 
@@ -127,7 +141,7 @@ def main():
         reserve.extend(lang_reserve)
         remaining.extend(lang_remaining)
 
-    # Belt-and-braces: assert zero normalized-instruction overlap between
+    # Belt-and-braces #1: assert zero normalized-instruction overlap between
     # train (remaining) and heldout, since D2 depends on this.
     train_q = {normalize(r["instruction"]) for r in remaining}
     heldout_q = {normalize(r["instruction"]) for r in heldout}
@@ -136,6 +150,20 @@ def main():
         sys.exit(f"REFUSING TO WRITE: {len(overlap)} train/heldout instruction overlaps "
                   f"found post-split — this should be impossible with disjoint slicing, "
                   f"investigate before proceeding.")
+
+    # Belt-and-braces #2: independently re-derive source_key() overlap between
+    # train and EVERY non-train split (heldout, reserve, gold), the same
+    # cross-lingual signal the split assignment above relies on. This is a
+    # second, from-scratch check (not just re-trusting global_assignment) —
+    # it would have caught the original bug this fix addresses.
+    train_src = {source_key(r) for r in remaining}
+    for split_name, split_rows in (("heldout", heldout), ("reserve", reserve), ("gold", gold)):
+        split_src = {source_key(r) for r in split_rows}
+        src_overlap = train_src & split_src
+        if src_overlap:
+            sys.exit(f"REFUSING TO WRITE: {len(src_overlap)} train/{split_name} cross-lingual "
+                      f"source overlaps found post-split (same meta.orig_instruction_en on both "
+                      f"sides) — investigate before proceeding.")
 
     # Write gold per-language files
     gold_by_lang = collections.defaultdict(list)
@@ -175,7 +203,8 @@ def main():
     print(f"Wrote: dataset/gold/<lang>.jsonl, eval/heldout/test.jsonl, "
           f"eval/heldout/reserve.jsonl, {hashes_md}")
     print(f"Rewrote {args.inp} in place with heldout/reserve/gold rows removed.")
-    print("\nVerified: zero train/heldout instruction overlap (D2 leakage=0 by construction).")
+    print("\nVerified: zero train/heldout instruction overlap, including cross-lingual "
+          "(same source question in a different language) — D2 leakage=0 by construction.")
 
 
 if __name__ == "__main__":
