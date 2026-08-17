@@ -89,3 +89,45 @@ item is a (small, undocumented-magnitude) source of noise not present in
 a single-provider run. Worth a sentence in the model card's limitations
 section rather than treating the combined-provider number as identical
 in rigor to a single-provider one.
+
+## Addendum 2026-08-17 — Cerebras dropped entirely; Groq's judge model also changed
+
+The 2026-08-16 fix above turned out to be broken in two separate, unrelated
+ways, both only discovered by hitting the live APIs directly rather than
+trusting docs/memory of an earlier verification:
+
+1. **Cerebras's `llama-3.3-70b` was itself deprecated on 2026-02-16** (six
+   months before this was even attempted) — every Cerebras call 404'd for
+   ~7 hours on Kaggle, burning most of a week's GPU quota for zero scored
+   items beyond what Groq alone produced. Re-pointing Cerebras at its
+   suggested replacement (`gpt-oss-120b`) then hit a second wall: as of
+   **2026-08-17**, Cerebras's free tier itself now requires a verified
+   payment method on file to unlock any credits (`402 payment_required`).
+   That directly conflicts with this project's zero-budget rule regardless
+   of model choice, so **Cerebras is dropped from the provider pool
+   entirely** — not a code fix, a hard policy wall on their end.
+2. Independently, live-querying this account's actual Groq model list
+   (`GET /openai/v1/models`, not the docs page) showed
+   `llama-3.3-70b-versatile` is no longer available on this account at
+   all — every call returned `404 model_not_found`. The docs page listing
+   it with rate limits was stale relative to the live API. **The judge
+   model is now `openai/gpt-oss-120b`** (Groq's own migration
+   recommendation, and it happens to carry a *higher* per-key daily budget
+   than the old model: 200K TPD vs. 100K TPD).
+
+Net effect on the post-submission full-N=1,226 attempt: back to
+**Groq-only**, but with the better-budgeted model — 7 keys x 200,000 TPD =
+1,400,000 TPD pooled, vs. 700,000 TPD under the old model. At ~1,700
+tokens/call this needs ~4.17M tokens total (2,452 calls), so roughly
+**3 daily `--resume` runs** to complete the full dual-order set, run
+locally (no GPU needed — `judge.py` is pure HTTP, the GPU-heavy adapter
+inference step was already completed and cached as `eval/out/ours.jsonl`
+in an earlier Kaggle session).
+
+Also worth flagging: the existing human-anchor validation
+(`eval/judge_anchor.py`, tau=0.481, p=0.0003, see `eval/reports/judge_anchor.md`)
+was run against the now-dead `llama-3.3-70b-versatile`, not
+`gpt-oss-120b`. That correlation result technically no longer validates
+*this* judge model's reliability — a disclosed limitation, not silently
+carried forward as still-current. Re-running the anchor validation against
+`gpt-oss-120b` would close this gap but hasn't been done yet.

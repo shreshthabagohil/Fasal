@@ -26,7 +26,7 @@ These four namespaces look alike but are DIFFERENT and were confused in early dr
 
 ## Evaluation
 - Primary metric: LLM-judge win-rate (blind A/B, dual-order, temp 0, seed 1729).
-- Judge model: Llama 3.3 70B via Groq free tier.
+- Judge model: `openai/gpt-oss-120b` via Groq free tier (changed 2026-08-17 from `llama-3.3-70b-versatile`, which Groq removed from this account's available models — see `eval/JUDGE_BUDGET.md` addendum for the full account of what broke and why).
 - Judge prompt + rubric: `repo/eval/judge_prompt.md` (frozen at M3 step 1; do NOT change mid-event).
 - Companion metric: chrF.
 - Significance: paired bootstrap over held-out items (10k resamples, 95% CI) + McNemar for win/loss.

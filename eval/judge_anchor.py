@@ -73,7 +73,12 @@ def fill_judge_scores(csv_path: str) -> None:
         result = request_judge(
             session=session,
             key_pool=key_pool,
-            model="llama-3.3-70b-versatile",
+            # 2026-08-17: was llama-3.3-70b-versatile; Groq removed it from
+            # this account's model list (see eval/JUDGE_BUDGET.md addendum).
+            # NOTE: the tau=0.481 human-anchor result already on record was
+            # computed against the OLD model, not this one -- disclosed
+            # limitation, not silently carried forward as still-valid.
+            model="openai/gpt-oss-120b",
             temperature=0,
             seed=1729,
             user_message=user_message,

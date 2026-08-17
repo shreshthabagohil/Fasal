@@ -2,7 +2,7 @@
 
 > **Result:** <!-- TODO(eval): fill after eval/reports/eval_report.json lands, keep in sync with README.md -->
 > `+__._%` LLM-judge win-rate over `sarvamai/sarvam-1` (base) on N=1,226 multilingual held-out test.
-> 95% CI [+_._, +_._] (paired bootstrap, 10k resamples). Judge: Llama-3.3-70B via Groq, dual-order, seed 1729.
+> 95% CI [+_._, +_._] (paired bootstrap, 10k resamples). Judge: `openai/gpt-oss-120b` via Groq, dual-order, seed 1729 (see `eval/JUDGE_BUDGET.md` for the 2026-08-17 judge-model change).
 
 *(Submitted-entry number used N=170 for time-budget reasons — see `eval/JUDGE_BUDGET.md`. This card is being
 updated with the fully-powered N=1,226 re-run.)*

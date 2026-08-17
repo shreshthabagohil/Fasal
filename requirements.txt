@@ -34,3 +34,11 @@ bitsandbytes==0.43.1; platform_system != "Darwin"  # QLoRA 4-bit (CUDA-only; ski
 # benefit; drop it and add it back explicitly if a future iteration actually uses it.
 
 statsmodels==0.14.2
+
+# 2026-08-18: added for train/train.py, which reads all hyperparameters from
+# train/config.yaml (single source of truth, per train/A0_LOCKED.md) rather
+# than hardcoding them. Was previously an unpinned transitive dependency
+# (pulled in indirectly by other packages) -- pinning explicitly now that a
+# file in this repo actually imports it directly, per this file's own "no
+# floating versions" rule.
+pyyaml==6.0.3

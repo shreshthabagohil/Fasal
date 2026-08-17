@@ -183,6 +183,15 @@ def main():
                         temperature=None,
                         max_new_tokens=args.max_new_tokens,
                         pad_token_id=tokenizer.pad_token_id,
+                        # 2026-08-17: greedy decoding with no repetition guard was
+                        # producing degenerate word/phrase loops in 38.8%+ of the
+                        # fine-tuned model's answers (see eval/JUDGE_BUDGET.md /
+                        # portfolio phase-1 notes). repetition_penalty discourages
+                        # re-emitting recent tokens; no_repeat_ngram_size hard-bans
+                        # exact 3-gram repeats. Both are standard, well-tested
+                        # HF generate() knobs -- no tech-stack change.
+                        repetition_penalty=1.3,
+                        no_repeat_ngram_size=3,
                     )
                 decoded = tokenizer.batch_decode(gen, skip_special_tokens=True)
                 for row, prompt, full_text in zip(batch, prompts, decoded):

@@ -72,10 +72,56 @@ def contains_pii(text: str) -> bool:
 # --- garbage / quality gates ------------------------------------------------
 GARBAGE = {"na", "n/a", "nil", "test", "test call", "weather", "-", ".", "none"}
 
+# 2026-08-18: added after a post-hoc audit of the ALREADY-SHIPPED
+# dataset/kcc_instruct_v1.jsonl (69,670 rows) found this filter was too
+# narrow. It only ever caught exact-string garbage + single-word answers, so
+# real KCC call-center noise sailed through untouched: misdials ("wrong
+# call"), agent call-redirects ("call this number", "busy with another
+# call, call back in 10 minutes"), and answers that are essentially just a
+# toll-free helpline number with a couple of filler words around it. These
+# are >=2 words and not in GARBAGE, so the old check kept every one of them.
+# Measured impact on the shipped v1 dataset: ~2.4% of all rows overall, but
+# ~3.6-4.9% of rows in each of the 7 machine-translated languages (roughly
+# double the English rate) -- i.e. a farmer's real agronomic question paired
+# with "please call 1800-180-5141" as the training target. This is exactly
+# the judge rubric's "confident-but-generic" auto-cap <=2 pattern
+# (eval/judge_rubric.md) -- training on it teaches the model that deflecting
+# with a phone number is a valid response to a real question. Toll-free
+# numbers (1800-prefixed) were also never caught by the PII regexes above,
+# since those only match Indian mobile (leading 6-9) and landline (leading
+# 0) shapes, not the 1800 toll-free format -- not a privacy gap (toll-free
+# numbers are public), but it meant this class of answer had nothing else
+# stopping it from shipping.
+CALL_REDIRECT_PATTERNS = [
+    "wrong call", "test call", "no such number", "not a valid query",
+    "call again", "call back", "please call", "call this number",
+    "call toll free", "kindly call", "contact number", "busy with another call",
+    "busy on another call", "call after", "call later",
+]
+TOLLFREE_RE = re.compile(r"\b1800[\-\s]?\d{3}[\-\s]?\d{3,4}\b")
+
+
+def is_call_redirect(answer: str) -> bool:
+    """True if the answer is call-center noise (misdial / redirect / bare
+    helpline number) rather than actual agronomic advice."""
+    a = (answer or "").strip().lower()
+    if not a:
+        return False
+    if any(p in a for p in CALL_REDIRECT_PATTERNS):
+        return True
+    # Answer is dominated by a toll-free number with little else around it
+    # (e.g. "1800-180-5661", "- -18001805661", "18001805141 pr call kare").
+    if TOLLFREE_RE.search(a):
+        words = a.split()
+        non_digit_words = [w for w in words if not re.fullmatch(r"[\d\-\s]+", w)]
+        if len(non_digit_words) <= 3:
+            return True
+    return False
+
 
 def is_garbage(answer: str) -> bool:
     a = (answer or "").strip().lower()
-    return (not a) or (a in GARBAGE) or (len(a.split()) < 2)
+    return (not a) or (a in GARBAGE) or (len(a.split()) < 2) or is_call_redirect(answer)
 
 
 # --- surface clean (applied to stored text — folded in from PR #6's

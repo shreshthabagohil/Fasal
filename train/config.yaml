@@ -12,7 +12,19 @@
 # already pinned in requirements.txt) so the run stays reproducible either way.
 
 seed: 1729
-dataset_version_hash: "5741495f65f43cef14ae1e5a44e2f54b18560dccdbae94613deb6c33c3441912"  # dataset/VERSION
+# 2026-08-18: bumped after a full data-integrity fix pass -- see
+# dataset/DATA_CARD.md "Addendum 2026-08-18" for the full incident writeup.
+# data/tests.py had never actually been run against the true final
+# 69,670-row merged dataset; doing so for the first time surfaced two real,
+# pre-existing failures (D5 PII: 470 rows with live phone numbers that
+# survived translation; D2b cross-lingual leakage: 668 unique question
+# phrasings, 13,862 rows, shared between train and eval/heldout/test.jsonl).
+# Both are now fixed at the source and verified: `python data/tests.py
+# --dataset dataset/kcc_instruct_v1.jsonl --heldout eval/heldout/test.jsonl`
+# reports all 6 gates PASS. Also folds in a separate call-redirect/KCC-noise
+# filter (1,025 rows -- see data/clean_kcc.py's is_call_redirect()).
+# New row count: 54,313 (was 69,670).
+dataset_version_hash: "e16b774cf3d8a7c27dcbf24db25e5acb92657fc79615a576d304fa4abc975341"  # dataset/VERSION
 
 qlora:
   quant: "nf4"
