@@ -61,7 +61,7 @@ python eval/judge.py \
   --base "$OUT_DIR/base.jsonl" \
   --ours "$OUT_DIR/ours.jsonl" \
   --out "$OUT_DIR/scores.jsonl" \
-  --model llama-3.3-70b-versatile \
+  --model openai/gpt-oss-120b \
   --temperature 0 \
   --seed "$SEED" \
   --dual-order

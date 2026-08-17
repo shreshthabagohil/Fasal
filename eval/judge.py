@@ -13,7 +13,7 @@ import requests
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 # 2026-08-16: N=1,226 dual-order (2,452 calls, ~4.17M tokens) does not fit
 # inside Groq's free-tier daily budget even pooled across 7 keys (7 x
@@ -31,10 +31,16 @@ PROVIDERS = {
 }
 MODEL_BY_PROVIDER = {
     "groq": DEFAULT_MODEL,
-    # Cerebras' model id for the same Llama-3.3-70B weights. Verify this
-    # against https://inference-docs.cerebras.ai/ before a long run --
+    # 2026-08-17: Cerebras deprecated llama-3.3-70b on 2026-02-16 (see
+    # https://inference-docs.cerebras.ai/support/deprecation) -- every
+    # request to it now 404s. Their own migration note recommends
+    # gpt-oss-120b as the replacement, so that's what's pinned here.
+    # This means Cerebras judges with a DIFFERENT model than Groq's
+    # llama-3.3-70b-versatile -- a disclosed methodological tradeoff (see
+    # eval/JUDGE_BUDGET.md), not silently swapped. Verify this against
+    # https://inference-docs.cerebras.ai/ before any future long run --
     # provider model ids drift independently of Groq's.
-    "cerebras": "llama-3.3-70b",
+    "cerebras": "gpt-oss-120b",
 }
 DEFAULT_TEMPERATURE = 0
 DEFAULT_SEED = 1729
