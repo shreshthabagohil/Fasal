@@ -89,6 +89,12 @@ def parse_args():
                      help="Defaults to '<config wandb.run_name_prefix>-<seed>'.")
     ap.add_argument("--no-wandb", action="store_true",
                      help="Disable W&B logging (e.g. for a quick local smoke test).")
+    ap.add_argument("--resume", action="store_true",
+                     help="Resume from the latest checkpoint in --output-dir if one exists "
+                          "(Trainer's save_strategy='epoch' writes checkpoint-<step> dirs there). "
+                          "Needed because a Kaggle GPU session has a ~12h single-run limit and a "
+                          "full 3-epoch run may not finish in one sitting -- rerun with this flag "
+                          "and the same --output-dir to continue instead of restarting from scratch.")
     return ap.parse_args()
 
 
@@ -269,8 +275,23 @@ def main():
         data_collator=PadCollator(tokenizer.pad_token_id),
     )
 
+    resume_from = None
+    if args.resume:
+        import glob
+
+        checkpoints = sorted(
+            glob.glob(f"{args.output_dir}/checkpoint-*"),
+            key=lambda p: int(p.rsplit("-", 1)[-1]),
+        )
+        if checkpoints:
+            resume_from = checkpoints[-1]
+            print(f"[train] --resume set, found checkpoint: {resume_from}", flush=True)
+        else:
+            print(f"[train] --resume set but no checkpoint-* dir found in {args.output_dir}; "
+                  f"starting fresh.", flush=True)
+
     print("[train] starting training ...", flush=True)
-    trainer.train()
+    trainer.train(resume_from_checkpoint=resume_from)
 
     print(f"[train] saving adapter to {args.output_dir} ...", flush=True)
     model.save_pretrained(args.output_dir)
