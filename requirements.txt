@@ -25,7 +25,15 @@ wandb==0.28.1
 torch==2.3.1
 transformers==4.43.3
 peft==0.12.0
-bitsandbytes==0.43.1; platform_system != "Darwin"  # QLoRA 4-bit (CUDA-only; skipped on Mac, see eval/infer.py MPS path)
+bitsandbytes==0.45.5; platform_system != "Darwin"  # QLoRA 4-bit (CUDA-only; skipped on Mac, see eval/infer.py MPS path)
+# 2026-09-01: bumped from 0.43.1 -- that version's optional triton-fused-matmul
+# path (bitsandbytes/nn/triton_based_modules.py) imports triton.ops.matmul_perf_model,
+# which was removed from triton in later releases. Crashes AutoModelForCausalLM.from_pretrained()
+# with "ModuleNotFoundError: No module named 'triton.ops'" the moment 4-bit quantization
+# is requested, on any environment with a newer triton than 0.43.1 was built against
+# (hit on Kaggle's Sept 2026 GPU image). We don't use the fused-matmul path for plain
+# QLoRA -- 0.45.5+ removed/guarded this import. See
+# https://github.com/bitsandbytes-foundation/bitsandbytes/issues/1492.
 # trl==0.9.6 removed 2026-08-12: never imported anywhere in this repo (grep -rn "trl"
 # --include="*.py" . returns zero hits) and it broke twice across versions during
 # training sessions this event (SFTTrainer API instability) -- training was switched
