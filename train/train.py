@@ -215,11 +215,21 @@ def main():
         bnb_4bit_compute_dtype=compute_dtype,
         bnb_4bit_use_double_quant=qlora_cfg["double_quant"],
     )
+    # device_map="auto" (not a manual {"": 0} dict) -- transformers/accelerate's
+    # dispatch_model() takes a different internal path for a single-entry dict
+    # device_map that ends up calling model.to(device) on the already-quantized
+    # model, which bitsandbytes explicitly forbids ("`.to` is not supported for
+    # `4-bit` or `8-bit` bitsandbytes models"). "auto" uses accelerate's normal
+    # hook-based placement instead and avoids that call entirely. Combined with
+    # CUDA_VISIBLE_DEVICES=0 set by the caller (see train/A0_LOCKED.md /
+    # Kaggle run commands) so "auto" resolves to the single visible GPU rather
+    # than sharding the model across multiple GPUs, which this single-process
+    # Trainer invocation (no DDP/deepspeed launcher) isn't set up to handle.
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
         revision=base_sha,
         quantization_config=bnb_config,
-        device_map={"": 0},
+        device_map="auto",
     )
     model = prepare_model_for_kbit_training(model)
 
