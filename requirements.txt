@@ -25,6 +25,16 @@ wandb==0.28.1
 torch==2.3.1
 transformers==4.43.3
 peft==0.12.0
+accelerate==0.33.0  # 2026-09-01: pinned, was previously an unpinned transitive dep.
+# Kaggle's preinstalled accelerate (1.13.0, a 2026-era release) paired with our
+# transformers==4.43.3 (mid-2024) breaks 4-bit bitsandbytes model loading:
+# transformers' from_pretrained() calls accelerate's dispatch_model(), which
+# with 1.13.0 unconditionally does model.to(device) for any single-device,
+# non-disk device_map (confirmed identical traceback to
+# huggingface/accelerate#3455) -- and bitsandbytes explicitly forbids .to() on
+# already-quantized models, raising ValueError every time. 0.33.0 is
+# contemporaneous with transformers==4.43.3 and is the combination this
+# training pipeline was actually validated against.
 bitsandbytes==0.45.5; platform_system != "Darwin"  # QLoRA 4-bit (CUDA-only; skipped on Mac, see eval/infer.py MPS path)
 # 2026-09-01: bumped from 0.43.1 -- that version's optional triton-fused-matmul
 # path (bitsandbytes/nn/triton_based_modules.py) imports triton.ops.matmul_perf_model,
