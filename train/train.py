@@ -290,7 +290,17 @@ def main():
         bf16=(qlora_cfg["compute_dtype"] == "bf16"),
         fp16=(qlora_cfg["compute_dtype"] != "bf16"),
         logging_steps=25,
-        save_strategy="epoch",
+        # 2026-09-01: save_strategy="steps" (was "epoch") + save_steps=250.
+        # num_train_epochs is now 1 (see config.yaml's 2026-09-01 note) and a
+        # single epoch over the full dataset runs ~15.6h -- longer than a
+        # Kaggle session's ~9-12h cap. "epoch" strategy only checkpoints when
+        # the epoch FINISHES, so a mid-epoch session cutoff would leave no
+        # checkpoint-* dir for --resume to find, silently discarding the
+        # entire first session's progress. Step-based checkpointing every 250
+        # steps (~69min at the measured 16.56s/step) bounds the worst-case
+        # loss to under 1h of GPU time per session cutoff, not the whole run.
+        save_strategy="steps",
+        save_steps=250,
         save_total_limit=3,
         report_to=report_to,
         run_name=run_name,
