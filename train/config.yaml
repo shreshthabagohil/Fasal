@@ -40,7 +40,14 @@ lora:
   bias: "none"
 
 training:
-  num_train_epochs: 3
+  num_train_epochs: 1
+  # 2026-09-01: dropped from 3 -- Kaggle smoke test measured real throughput at
+  # 16.56 s/step. At effective batch 16 (4 x grad_accum 4), 3 epochs over the
+  # full 54,313-row dataset = 10,185 steps = ~47h GPU time for ONE seed, which
+  # blows past a single Kaggle session (~9-12h cap) and the 30h/week quota
+  # (needs 2 quota cycles just to finish). 1 epoch = ~15.6h, fits within this
+  # week's quota across 2 resumed sessions. Run judge-sample eval on this
+  # first; only spend more epochs/seeds if the eval justifies the GPU cost.
   max_seq_length: 2048
   learning_rate: 2.0e-4        # standard QLoRA starting point; adjust only with a logged reason
   lr_scheduler: "cosine"
