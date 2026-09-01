@@ -47,6 +47,26 @@ import os
 import random
 import sys
 
+# Neutralize bitsandbytes' optional triton-fused-matmul integration before it
+# is ever imported. bitsandbytes/nn/__init__.py unconditionally imports
+# triton_based_modules at package-import time, which calls
+# is_triton_available() -> ... -> torch._dynamo -> a numpy internal
+# (numpy/random/mtrand.pyx), and on some environments (hit on Kaggle, Sept
+# 2026) that cascade crashes with "ValueError: numpy.dtype size changed, may
+# indicate binary incompatibility" -- a real ABI conflict in code we never
+# use (plain 4-bit NF4 QLoRA doesn't touch bitsandbytes' triton-fused
+# kernels). Pre-registering a stub module in sys.modules makes bitsandbytes
+# think it already checked triton availability and got "no", so the real
+# (broken, on this environment) submodule is never imported. Must run before
+# any transformers/bitsandbytes import -- hence top of file, module level,
+# ahead of everything else.
+import sys as _sys
+import types as _types
+
+_fake_triton_utils = _types.ModuleType("bitsandbytes.triton.triton_utils")
+_fake_triton_utils.is_triton_available = lambda: False
+_sys.modules["bitsandbytes.triton.triton_utils"] = _fake_triton_utils
+
 # Must stay byte-for-byte identical to eval/infer.py's PROMPT_TEMPLATE and
 # demo/app.py's PROMPT_TEMPLATE. If this changes, update both of those too.
 PROMPT_TEMPLATE = "### Question:\n{instruction}\n### Context:\n{input}\n### Answer:"
