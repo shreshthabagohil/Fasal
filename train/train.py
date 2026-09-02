@@ -200,51 +200,6 @@ class PadCollator:
         }
 
 
-class HubCheckpointCallback:
-    """Pushes each checkpoint-<step> dir to HF Hub right after Trainer saves it
-    locally. See --hub-repo-id's help for the incident this fixes: a Kaggle
-    commit run killed by the 12h timeout does not package /kaggle/working into
-    Output, so local-only checkpoints can be silently lost with the run showing
-    no error. HF Hub is the durable copy; local disk is just a fast cache.
-
-    Built as a duck-typed transformers.TrainerCallback (subclassing it isn't
-    required -- Trainer calls whichever of these hook methods exist on any
-    object in the callbacks list) so this class has zero import-time
-    dependency on transformers itself, consistent with this file's pattern of
-    keeping heavy imports lazy inside main().
-    """
-
-    def __init__(self, repo_id, seed):
-        self.repo_id = repo_id
-        self.seed = seed
-        self.enabled = bool(os.environ.get("HF_TOKEN"))
-        if not self.enabled:
-            print("[train] HF_TOKEN not set -- checkpoint Hub push disabled, "
-                  "local-only (see --hub-repo-id help: a timeout-killed Kaggle "
-                  "run will NOT preserve these checkpoints).", flush=True)
-            return
-        from huggingface_hub import HfApi
-
-        self.api = HfApi()
-        self.api.create_repo(repo_id, repo_type="model", private=True, exist_ok=True)
-
-    def on_save(self, args, state, control, **kwargs):
-        if not self.enabled:
-            return
-        ckpt_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
-        path_in_repo = f"seed{self.seed}/checkpoint-{state.global_step}"
-        try:
-            self.api.upload_folder(
-                folder_path=ckpt_dir,
-                repo_id=self.repo_id,
-                path_in_repo=path_in_repo,
-                repo_type="model",
-            )
-            print(f"[train] pushed {path_in_repo} to {self.repo_id}", flush=True)
-        except Exception as e:  # noqa: BLE001 -- must never crash training over this
-            print(f"[train] WARNING: Hub push failed for {path_in_repo}: {e}", flush=True)
-
-
 def _pull_latest_checkpoint_from_hub(repo_id, seed, output_dir):
     """Called only when --resume is set and no local checkpoint-* dir exists in
     --output-dir (the exact situation a timeout-killed Kaggle run leaves
@@ -301,11 +256,64 @@ def main():
         AutoTokenizer,
         BitsAndBytesConfig,
         Trainer,
+        TrainerCallback,
         TrainingArguments,
         set_seed as hf_set_seed,
     )
 
     hf_set_seed(seed)
+
+    class HubCheckpointCallback(TrainerCallback):
+        """Pushes each checkpoint-<step> dir to HF Hub right after Trainer saves
+        it locally. See --hub-repo-id's help for the incident this fixes: a
+        Kaggle commit run killed by the 12h timeout does not package
+        /kaggle/working into Output, so local-only checkpoints can be silently
+        lost with the run showing no error. HF Hub is the durable copy; local
+        disk is just a fast cache.
+
+        2026-09-02 correction: MUST subclass TrainerCallback, not just duck-type
+        an on_save method. Trainer's CallbackHandler.call_event() calls
+        getattr(callback, event)(...) unconditionally for every lifecycle event
+        (on_init_end, on_train_begin, on_step_end, ...), relying on
+        TrainerCallback's base class to supply no-op defaults for events a
+        subclass doesn't override. A plain object without that base class
+        raised AttributeError on the very first event (on_init_end, fired at
+        Trainer construction) -- confirmed by an actual run that hit exactly
+        this, costing ~400s before training could even start. Defined here
+        inside main(), not at module level, because it needs TrainerCallback in
+        scope and this file keeps transformers imports lazy (see module
+        docstring / triton-stub comment at the top of this file for why).
+        """
+
+        def __init__(self, repo_id, seed):
+            self.repo_id = repo_id
+            self.seed = seed
+            self.enabled = bool(os.environ.get("HF_TOKEN"))
+            if not self.enabled:
+                print("[train] HF_TOKEN not set -- checkpoint Hub push disabled, "
+                      "local-only (see --hub-repo-id help: a timeout-killed Kaggle "
+                      "run will NOT preserve these checkpoints).", flush=True)
+                return
+            from huggingface_hub import HfApi
+
+            self.api = HfApi()
+            self.api.create_repo(repo_id, repo_type="model", private=True, exist_ok=True)
+
+        def on_save(self, args, state, control, **kwargs):
+            if not self.enabled:
+                return
+            ckpt_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
+            path_in_repo = f"seed{self.seed}/checkpoint-{state.global_step}"
+            try:
+                self.api.upload_folder(
+                    folder_path=ckpt_dir,
+                    repo_id=self.repo_id,
+                    path_in_repo=path_in_repo,
+                    repo_type="model",
+                )
+                print(f"[train] pushed {path_in_repo} to {self.repo_id}", flush=True)
+            except Exception as e:  # noqa: BLE001 -- must never crash training over this
+                print(f"[train] WARNING: Hub push failed for {path_in_repo}: {e}", flush=True)
 
     if not torch.cuda.is_available():
         print(
