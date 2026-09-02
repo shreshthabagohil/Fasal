@@ -111,10 +111,26 @@ def parse_args():
                      help="Disable W&B logging (e.g. for a quick local smoke test).")
     ap.add_argument("--resume", action="store_true",
                      help="Resume from the latest checkpoint in --output-dir if one exists "
-                          "(Trainer's save_strategy='epoch' writes checkpoint-<step> dirs there). "
-                          "Needed because a Kaggle GPU session has a ~12h single-run limit and a "
-                          "full 3-epoch run may not finish in one sitting -- rerun with this flag "
-                          "and the same --output-dir to continue instead of restarting from scratch.")
+                          "(Trainer's save_strategy='steps' writes checkpoint-<step> dirs there "
+                          "every save_steps, see config.yaml comment). Needed because a Kaggle "
+                          "GPU commit run has a 12h hard timeout and a full run may not finish "
+                          "in one sitting -- rerun with this flag and the same --output-dir to "
+                          "continue instead of restarting from scratch. NOTE: as of 2026-09-02, "
+                          "also downloads the latest checkpoint from --hub-repo-id first if none "
+                          "is found locally -- see that flag's help for why.")
+    ap.add_argument("--hub-repo-id", default="Algo-Nova/fasal-sarvam1-lora-checkpoints",
+                     help="2026-09-02: a Kaggle 'Save and Run All' commit killed by the 12h "
+                          "timeout does NOT run its normal end-of-execution Output-packaging "
+                          "step -- confirmed by inspecting a timed-out run's Output tab, which "
+                          "only contained the git-cloned repo/, not --output-dir's checkpoints. "
+                          "12h of real training was lost with nothing to resume from. Fix: push "
+                          "every checkpoint to this HF Hub model repo as it saves (see "
+                          "HubCheckpointCallback below), so progress survives regardless of how "
+                          "the Kaggle container dies. Requires an HF_TOKEN env var with write "
+                          "access (set via a Kaggle secret, exported to os.environ before this "
+                          "script runs). If HF_TOKEN is unset, the push is skipped with a "
+                          "warning rather than failing the run -- training should not crash "
+                          "just because the durability layer is unavailable.")
     return ap.parse_args()
 
 
@@ -182,6 +198,92 @@ class PadCollator:
             "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
             "labels": torch.tensor(labels, dtype=torch.long),
         }
+
+
+class HubCheckpointCallback:
+    """Pushes each checkpoint-<step> dir to HF Hub right after Trainer saves it
+    locally. See --hub-repo-id's help for the incident this fixes: a Kaggle
+    commit run killed by the 12h timeout does not package /kaggle/working into
+    Output, so local-only checkpoints can be silently lost with the run showing
+    no error. HF Hub is the durable copy; local disk is just a fast cache.
+
+    Built as a duck-typed transformers.TrainerCallback (subclassing it isn't
+    required -- Trainer calls whichever of these hook methods exist on any
+    object in the callbacks list) so this class has zero import-time
+    dependency on transformers itself, consistent with this file's pattern of
+    keeping heavy imports lazy inside main().
+    """
+
+    def __init__(self, repo_id, seed):
+        self.repo_id = repo_id
+        self.seed = seed
+        self.enabled = bool(os.environ.get("HF_TOKEN"))
+        if not self.enabled:
+            print("[train] HF_TOKEN not set -- checkpoint Hub push disabled, "
+                  "local-only (see --hub-repo-id help: a timeout-killed Kaggle "
+                  "run will NOT preserve these checkpoints).", flush=True)
+            return
+        from huggingface_hub import HfApi
+
+        self.api = HfApi()
+        self.api.create_repo(repo_id, repo_type="model", private=True, exist_ok=True)
+
+    def on_save(self, args, state, control, **kwargs):
+        if not self.enabled:
+            return
+        ckpt_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
+        path_in_repo = f"seed{self.seed}/checkpoint-{state.global_step}"
+        try:
+            self.api.upload_folder(
+                folder_path=ckpt_dir,
+                repo_id=self.repo_id,
+                path_in_repo=path_in_repo,
+                repo_type="model",
+            )
+            print(f"[train] pushed {path_in_repo} to {self.repo_id}", flush=True)
+        except Exception as e:  # noqa: BLE001 -- must never crash training over this
+            print(f"[train] WARNING: Hub push failed for {path_in_repo}: {e}", flush=True)
+
+
+def _pull_latest_checkpoint_from_hub(repo_id, seed, output_dir):
+    """Called only when --resume is set and no local checkpoint-* dir exists in
+    --output-dir (the exact situation a timeout-killed Kaggle run leaves
+    behind). Finds the highest-step checkpoint under seed<seed>/ in the Hub
+    repo and downloads it into output_dir so the existing local-checkpoint-scan
+    logic below picks it up unchanged."""
+    if not os.environ.get("HF_TOKEN"):
+        return
+    from huggingface_hub import HfApi, snapshot_download
+
+    api = HfApi()
+    try:
+        files = api.list_repo_files(repo_id, repo_type="model")
+    except Exception as e:  # noqa: BLE001
+        print(f"[train] no Hub checkpoints found ({e}); starting fresh.", flush=True)
+        return
+
+    prefix = f"seed{seed}/checkpoint-"
+    steps = sorted(
+        {int(f[len(prefix):].split("/", 1)[0]) for f in files if f.startswith(prefix)}
+    )
+    if not steps:
+        print(f"[train] no checkpoints under {prefix}* in {repo_id}; starting fresh.", flush=True)
+        return
+
+    latest = steps[-1]
+    print(f"[train] found Hub checkpoint seed{seed}/checkpoint-{latest}, downloading ...", flush=True)
+    snapshot_download(
+        repo_id=repo_id,
+        repo_type="model",
+        allow_patterns=[f"seed{seed}/checkpoint-{latest}/*"],
+        local_dir=output_dir + "/.hub_pull",
+    )
+    src = f"{output_dir}/.hub_pull/seed{seed}/checkpoint-{latest}"
+    dst = f"{output_dir}/checkpoint-{latest}"
+    if os.path.isdir(src):
+        os.makedirs(output_dir, exist_ok=True)
+        os.rename(src, dst)
+        print(f"[train] restored {dst} from Hub.", flush=True)
 
 
 def main():
@@ -313,6 +415,7 @@ def main():
         args=training_args,
         train_dataset=hf_dataset,
         data_collator=PadCollator(tokenizer.pad_token_id),
+        callbacks=[HubCheckpointCallback(args.hub_repo_id, seed)],
     )
 
     resume_from = None
@@ -323,6 +426,15 @@ def main():
             glob.glob(f"{args.output_dir}/checkpoint-*"),
             key=lambda p: int(p.rsplit("-", 1)[-1]),
         )
+        if not checkpoints:
+            # 2026-09-02: nothing locally -- this is the exact state a
+            # timeout-killed Kaggle commit run leaves behind. Try the durable
+            # Hub copy before giving up and starting from scratch.
+            _pull_latest_checkpoint_from_hub(args.hub_repo_id, seed, args.output_dir)
+            checkpoints = sorted(
+                glob.glob(f"{args.output_dir}/checkpoint-*"),
+                key=lambda p: int(p.rsplit("-", 1)[-1]),
+            )
         if checkpoints:
             resume_from = checkpoints[-1]
             print(f"[train] --resume set, found checkpoint: {resume_from}", flush=True)
